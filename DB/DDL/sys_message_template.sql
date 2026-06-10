@@ -1,0 +1,21 @@
+CREATE TABLE `sys_message_template` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `template_code` varchar(64) NOT NULL COMMENT '模板编码',
+  `aliyun_template_code` varchar(64) DEFAULT NULL COMMENT '阿里云短信模板CODE（channel=1时有效）',
+  `template_name` varchar(200) NOT NULL COMMENT '模板名称',
+  `channel` tinyint NOT NULL COMMENT '渠道 1-短信 2-站内通知 3-公众号模板消息 4-小程序订阅消息',
+  `title_template` varchar(500) DEFAULT NULL COMMENT '标题模板 {xxx} 占位符',
+  `content_template` text COMMENT '内容模板 {xxx} 占位符',
+  `variables` json DEFAULT NULL COMMENT '变量定义 [{"key":"name","desc":"姓名"}]',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态 1-启用 0-禁用',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `create_by` bigint DEFAULT NULL COMMENT '创建人',
+  `update_by` bigint DEFAULT NULL COMMENT '更新人',
+  `deleted` tinyint NOT NULL DEFAULT '0' COMMENT '删除标记',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_template_code` (`template_code`) USING BTREE,
+  KEY `idx_channel` (`channel`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='消息模板表';

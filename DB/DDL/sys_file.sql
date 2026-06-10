@@ -1,0 +1,21 @@
+CREATE TABLE `sys_file` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `original_name` varchar(255) DEFAULT NULL COMMENT '原始文件名',
+  `stored_name` varchar(100) NOT NULL COMMENT '存储文件名（UUID+扩展名）',
+  `file_path` varchar(500) DEFAULT NULL COMMENT 'OSS存储路径',
+  `encrypted_path` varchar(500) DEFAULT NULL COMMENT 'Base64加密后的路径',
+  `file_size` bigint DEFAULT NULL COMMENT '文件大小（字节）',
+  `mime_type` varchar(100) DEFAULT NULL COMMENT 'MIME类型',
+  `file_ext` varchar(20) DEFAULT NULL COMMENT '文件扩展名',
+  `url` varchar(500) DEFAULT NULL COMMENT '完整访问URL',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态 1:启用 0:禁用',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `create_by` bigint DEFAULT NULL COMMENT '创建人',
+  `update_by` bigint DEFAULT NULL COMMENT '更新人',
+  `deleted` tinyint NOT NULL DEFAULT '0' COMMENT '删除标记',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_stored_name` (`stored_name`),
+  KEY `idx_create_time` (`create_time`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='文件表';

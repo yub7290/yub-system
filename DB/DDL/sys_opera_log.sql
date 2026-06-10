@@ -1,0 +1,22 @@
+CREATE TABLE `sys_opera_log` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id` bigint DEFAULT NULL COMMENT '操作人ID',
+  `nick_name` varchar(50) DEFAULT NULL COMMENT '操作人用户名',
+  `module` varchar(50) DEFAULT NULL COMMENT '模块（如dict/role/param）',
+  `opera_type` varchar(20) DEFAULT NULL COMMENT '操作类型（CREATE/UPDATE/DELETE/QUERY）',
+  `content` varchar(500) DEFAULT NULL COMMENT '操作内容摘要',
+  `method_name` varchar(200) DEFAULT NULL COMMENT '方法名',
+  `request_params` text COMMENT '请求参数（JSON，脱敏）',
+  `response_result` text COMMENT '响应结果（JSON，脱敏）',
+  `ip` varchar(50) DEFAULT NULL COMMENT 'IP地址',
+  `cost_time` int DEFAULT NULL COMMENT '耗时(ms)',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `create_by` bigint DEFAULT NULL COMMENT '创建人',
+  `update_by` bigint DEFAULT NULL COMMENT '更新人',
+  PRIMARY KEY (`id`),
+  KEY `idx_create_time` (`create_time`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_module` (`module`),
+  KEY `idx_opera_type` (`opera_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统操作日志';

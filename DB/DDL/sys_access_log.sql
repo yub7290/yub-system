@@ -1,0 +1,22 @@
+CREATE TABLE `sys_access_log` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id` bigint DEFAULT NULL COMMENT '用户ID（未登录则null）',
+  `nick_name` varchar(50) DEFAULT NULL COMMENT '用户名（未登录则null）',
+  `ip` varchar(50) NOT NULL COMMENT 'IP地址',
+  `method` varchar(10) NOT NULL COMMENT 'HTTP方法',
+  `url` varchar(500) NOT NULL COMMENT '请求路径',
+  `user_agent` varchar(500) DEFAULT NULL COMMENT '浏览器UA',
+  `event_type` varchar(20) NOT NULL DEFAULT 'REQUEST' COMMENT '事件类型',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态（1成功 0失败）',
+  `error_msg` varchar(500) DEFAULT NULL COMMENT '错误信息',
+  `cost_time` int DEFAULT NULL COMMENT '耗时(ms)',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `create_by` bigint DEFAULT NULL COMMENT '创建人',
+  `update_by` bigint DEFAULT NULL COMMENT '更新人',
+  PRIMARY KEY (`id`),
+  KEY `idx_create_time` (`create_time`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_ip` (`ip`),
+  KEY `idx_url` (`url`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统访问日志';
