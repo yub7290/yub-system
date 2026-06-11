@@ -6,7 +6,7 @@
         INSERT INTO sys_access_log (user_id, nick_name, ip, user_agent, status, error_msg,
                     method, url, event_type)
         VALUES (#{userId}, #{nickName}, #{ip}, #{userAgent}, #{status}, #{errorMsg},
-                    'POST', '/api/auth/login', 'LOGIN')
+                    #{method}, #{url}, #{eventType})
     </insert>
 
 </mapper>

@@ -1,18 +1,13 @@
 package com.yub.system.service.auth.impl;
 
 import com.wf.captcha.SpecCaptcha;
-import com.wf.captcha.utils.CaptchaUtil;
+import com.yub.common.constant.RedisKeyConstants;
+import com.yub.common.util.IdUtils;
+import com.yub.framework.util.RedisUtils;
 import com.yub.system.service.auth.CaptchaService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import com.yub.system.vo.auth.CaptchaRespVO;
 import lombok.RequiredArgsConstructor;
-import org.redisson.api.RBucket;
-import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
-
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 验证码服务实现
@@ -26,26 +21,26 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CaptchaServiceImpl implements CaptchaService {
 
-    private final RedissonClient redissonClient;
-
-    private static final String CAPTCHA_PREFIX = "captcha:";
     private static final int CAPTCHA_EXPIRE_MINUTES = 5;
     private static final int CAPTCHA_WIDTH = 130;
     private static final int CAPTCHA_HEIGHT = 48;
     private static final int CAPTCHA_LENGTH = 4;
 
+    /**
+     * 生成算术验证码图片，将验证码文本存入Redis并返回Base64图片和key
+     */
     @Override
-    public Map<String, String> generate(HttpServletRequest request, HttpServletResponse response) {
+    public CaptchaRespVO generate() {
         SpecCaptcha captcha = new SpecCaptcha(CAPTCHA_WIDTH, CAPTCHA_HEIGHT, CAPTCHA_LENGTH);
         String text = captcha.text();
         String base64 = captcha.toBase64();
 
-        RBucket<String> bucket = redissonClient.getBucket(CAPTCHA_PREFIX + text);
-        bucket.set(text, Duration.ofMinutes(CAPTCHA_EXPIRE_MINUTES));
+        String captchaKey = IdUtils.simpleUuid();
+        RedisUtils.set(RedisKeyConstants.CAPTCHA_PREFIX + captchaKey, text, CAPTCHA_EXPIRE_MINUTES);
 
-        Map<String, String> result = new HashMap<>();
-        result.put("key", text);
-        result.put("image", base64);
-        return result;
+        return CaptchaRespVO.builder()
+                .key(captchaKey)
+                .image(base64)
+                .build();
     }
 }

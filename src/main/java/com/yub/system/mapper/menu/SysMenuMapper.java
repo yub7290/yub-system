@@ -17,5 +17,18 @@ import java.util.List;
 @Mapper
 public interface SysMenuMapper {
 
+    /**
+     * 根据用户ID查询菜单列表
+     *
+     * @param userId 用户ID
+     * @return 用户拥有的菜单列表
+     */
     List<SysMenu> selectByUserId(@Param("userId") Long userId);
+
+    /**
+     * 查询所有启用的菜单（超级管理员用）
+     *
+     * @return 所有菜单列表
+     */
+    List<SysMenu> selectAll();
 }

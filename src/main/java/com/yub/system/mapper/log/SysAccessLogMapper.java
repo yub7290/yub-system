@@ -14,5 +14,11 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface SysAccessLogMapper {
 
+    /**
+     * 插入登录日志
+     *
+     * @param log 日志实体
+     * @return 影响行数
+     */
     int insert(SysAccessLog log);
 }

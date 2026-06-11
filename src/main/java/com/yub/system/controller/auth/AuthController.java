@@ -1,22 +1,19 @@
 package com.yub.system.controller.auth;
 
 import com.yub.common.model.Response;
+import com.yub.framework.security.JwtProvider;
+import com.yub.framework.security.SecurityUtils;
 import com.yub.framework.util.IpUtils;
-import com.yub.system.dto.auth.LoginRequest;
-import com.yub.system.dto.auth.LoginResponse;
-import com.yub.system.entity.menu.SysMenu;
+import com.yub.system.dto.auth.LoginReqDTO;
 import com.yub.system.service.auth.AuthService;
 import com.yub.system.service.auth.CaptchaService;
+import com.yub.system.vo.auth.CaptchaRespVO;
+import com.yub.system.vo.auth.LoginRespVO;
+import com.yub.system.vo.auth.UserInfoRespVO;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * 登录认证
@@ -33,63 +30,65 @@ public class AuthController {
 
     private final AuthService authService;
     private final CaptchaService captchaService;
+    private final JwtProvider jwtProvider;
 
     /**
      * 获取验证码
+     *
      * @return 验证码
      */
     @GetMapping("/captcha")
-    public Response<Map<String, String>> captcha(HttpServletRequest request, HttpServletResponse response) {
-        return Response.success(captchaService.generate(request, response));
+    public Response<CaptchaRespVO> captcha() {
+        return Response.success(captchaService.generate());
     }
 
     /**
      * 登录
-     * @param request 登录请求
+     *
+     * @param reqDTO      登录请求
      * @param httpRequest HTTP请求
      * @return 登录响应
      */
     @PostMapping("/login")
-    public Response<LoginResponse> login(@Valid @RequestBody LoginRequest request,
-                                          HttpServletRequest httpRequest) {
-
-        String userAgent = httpRequest.getHeader("User-Agent");
-        LoginResponse response = authService.login(request, userAgent);
+    public Response<LoginRespVO> login(@Valid @RequestBody LoginReqDTO reqDTO,
+                                       HttpServletRequest httpRequest) {
+        String ip = IpUtils.getClientIp(httpRequest);
+        LoginRespVO response = authService.login(reqDTO, ip);
         return Response.success(response);
     }
 
     /**
      * 刷新Token
-     * @param body 请求体
-     * @return 新的Token
+     *
+     * @param refreshToken 刷新Token
      */
-    @PostMapping("/refresh")
-    public Response<Map<String, String>> refresh(@RequestBody Map<String, String> body) {
-        String refreshToken = body.get("refreshToken");
-        String accessToken = authService.refresh(refreshToken);
-        return Response.success(Map.of("accessToken", accessToken));
+    @PostMapping("/refresh/{refreshToken}")
+    public Response<LoginRespVO> refresh(@PathVariable String refreshToken) {
+        return Response.success(authService.refresh(refreshToken));
     }
 
     /**
-     * 登出
+     * 登出：清除RefreshToken并将AccessToken加入黑名单
+     *
+     * @param request HTTP请求（用于提取AccessToken）
      * @return 登出响应
      */
     @PostMapping("/logout")
-    public Response<Void> logout() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = Long.valueOf(auth.getName());
-        authService.logout(userId);
+    public Response<Void> logout(HttpServletRequest request) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        String accessToken = jwtProvider.getToken(request);
+        authService.logout(userId, accessToken);
         return Response.success();
     }
 
     /**
-     * 获取菜单
-     * @return 菜单
+     * 获取当前用户信息（含角色、菜单树、权限标识）
+     *
+     * @return 用户信息响应
      */
-    @GetMapping("/menus")
-    public Response<List<SysMenu>> menus() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = Long.valueOf(auth.getName());
-        return Response.success(authService.getMenus(userId));
+    @GetMapping("/getUserInfo")
+    public Response<UserInfoRespVO> getUserInfo() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        return Response.success(authService.getCurrentUserInfo(userId));
     }
 }

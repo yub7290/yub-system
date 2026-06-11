@@ -1,9 +1,6 @@
 package com.yub.system.service.auth;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import java.util.Map;
+import com.yub.system.vo.auth.CaptchaRespVO;
 
 /**
  * 验证码服务接口
@@ -15,5 +12,10 @@ import java.util.Map;
  */
 public interface CaptchaService {
 
-    Map<String, String> generate(HttpServletRequest request, HttpServletResponse response);
+    /**
+     * 生成图形验证码
+     *
+     * @return key=验证码标识, image=Base64图片
+     */
+    CaptchaRespVO generate();
 }

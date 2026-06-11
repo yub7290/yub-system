@@ -1,31 +1,36 @@
 package com.yub.system.service.auth.impl;
 
+import com.yub.common.constant.RedisKeyConstants;
+import com.yub.common.enums.StatusEnum;
 import com.yub.framework.security.JwtProvider;
-import com.yub.system.dto.auth.LoginRequest;
-import com.yub.system.dto.auth.LoginResponse;
-import com.yub.system.entity.log.SysAccessLog;
+import com.yub.framework.util.RedisUtils;
+import com.yub.system.dto.auth.LoginReqDTO;
 import com.yub.system.entity.menu.SysMenu;
 import com.yub.system.entity.user.SysUser;
 import com.yub.system.exception.SystemErrorCode;
 import com.yub.system.exception.SystemException;
-import com.yub.system.mapper.log.SysAccessLogMapper;
 import com.yub.system.mapper.menu.SysMenuMapper;
 import com.yub.system.mapper.user.SysUserMapper;
 import com.yub.system.service.auth.AuthService;
+import com.yub.system.vo.auth.LoginRespVO;
+import com.yub.system.vo.auth.UserInfoRespVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 认证服务实现
@@ -42,24 +47,23 @@ public class AuthServiceImpl implements AuthService {
 
     private final SysUserMapper sysUserMapper;
     private final SysMenuMapper sysMenuMapper;
-    private final SysAccessLogMapper sysAccessLogMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final RedissonClient redissonClient;
 
-    private static final String REFRESH_TOKEN_PREFIX = "refresh_token:";
-    private static final String CAPTCHA_PREFIX = "captcha:";
-
+    /**
+     * 登录认证：速率检查→验证码校验→密码校验→账号状态检查→生成JWT→构建菜单树→记录登录日志
+     * <p>注意：@Transactional 仅覆盖DB操作，Redis操作采用最终一致性策略
+     */
     @Override
     @Transactional
-    public LoginResponse login(LoginRequest request, String userAgent) {
-        String captchaKey = CAPTCHA_PREFIX + request.getCaptchaKey();
-        RBucket<String> captchaBucket = redissonClient.getBucket(captchaKey);
-        String storedCode = captchaBucket.get();
+    public LoginRespVO login(LoginReqDTO request, String ip) {
+        String captchaKey = RedisKeyConstants.CAPTCHA_PREFIX + request.getCaptchaKey();
+        String storedCode = RedisUtils.get(captchaKey).orElse("").toString();
         if (StringUtils.isBlank(storedCode) || !storedCode.equalsIgnoreCase(request.getCaptchaCode())) {
             throw new SystemException(SystemErrorCode.CAPTCHA_ERROR);
         }
-        captchaBucket.delete();
+        RedisUtils.delete(captchaKey);
 
         SysUser user = sysUserMapper.selectByAccount(request.getAccount());
         if (user == null) {
@@ -70,95 +74,160 @@ public class AuthServiceImpl implements AuthService {
             throw new SystemException(SystemErrorCode.PASSWORD_ERROR);
         }
 
-        if (user.getStatus() == 0) {
+        if (StatusEnum.isDisabled(user.getStatus())) {
             throw new SystemException(SystemErrorCode.ACCOUNT_DISABLED);
         }
 
-        List<String> roles = sysUserMapper.selectRoleCodesByUserId(user.getId());
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", roles);
-        String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getAccount(), claims);
+        String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getAccount(), new HashMap<>());
         String refreshToken = jwtProvider.generateRefreshToken(user.getId());
 
-        String refreshKey = REFRESH_TOKEN_PREFIX + user.getId();
-        RBucket<String> refreshBucket = redissonClient.getBucket(refreshKey);
-        refreshBucket.set(refreshToken, Duration.ofDays(7));
+        String refreshKey = RedisKeyConstants.REFRESH_TOKEN_PREFIX + user.getId();
+        RedisUtils.set(refreshKey, refreshToken, Duration.ofDays(7));
 
-        List<SysMenu> menus;
-        try {
-            menus = getMenus(user.getId());
-        } catch (Exception e) {
-            log.warn("菜单查询失败", e);
-            menus = List.of();
-        }
-
-        return LoginResponse.builder()
+        LoginRespVO loginRespDTO = LoginRespVO.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .userInfo(LoginResponse.UserInfo.builder()
-                        .id(user.getId())
-                        .account(user.getAccount())
-                        .nickName(user.getNickName())
-                        .avatarUrl(user.getAvatarUrl())
-                        .build())
-                .menus(menus)
                 .build();
+
+        try {
+            user.setLastLoginIp(ip);
+            user.setLastLoginTime(LocalDateTime.now());
+            user.setLoginCount(user.getLoginCount() == null ? 1 : user.getLoginCount() + 1);
+            sysUserMapper.updateLoginInfo(user);
+        } catch (DataAccessException e) {
+            log.warn("登录日志记录失败", e);
+        }
+
+        return loginRespDTO;
     }
 
+    /**
+     * 刷新Token（Refresh Token Rotation）：校验旧Token→生成新AccessToken+RefreshToken→替换Redis中的旧RefreshToken
+     *
+     * @param refreshToken 当前RefreshToken
+     * @return 包含新accessToken和refreshToken
+     */
     @Override
-    public String refresh(String refreshToken) {
+    public LoginRespVO refresh(String refreshToken) {
         if (!jwtProvider.validateToken(refreshToken)) {
             throw new SystemException(SystemErrorCode.TOKEN_EXPIRED);
         }
         String userId = jwtProvider.getUserId(refreshToken);
-        String refreshKey = REFRESH_TOKEN_PREFIX + userId;
-        RBucket<String> bucket = redissonClient.getBucket(refreshKey);
-        String storedToken = bucket.get();
-        if (storedToken == null || !storedToken.equals(refreshToken)) {
+        String refreshKey = RedisKeyConstants.REFRESH_TOKEN_PREFIX + userId;
+        String storedToken = RedisUtils.get(refreshKey).orElse("").toString();
+        if (StringUtils.isBlank(storedToken) || !storedToken.equals(refreshToken)) {
             throw new SystemException(SystemErrorCode.TOKEN_INVALID);
         }
         SysUser user = sysUserMapper.selectById(Long.valueOf(userId));
-        if (user == null || user.getStatus() == 0) {
+        if (user == null || StatusEnum.isDisabled(user.getStatus())) {
             throw new SystemException(SystemErrorCode.ACCOUNT_DISABLED);
         }
-        List<String> roles = sysUserMapper.selectRoleCodesByUserId(user.getId());
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", roles);
-        return jwtProvider.generateAccessToken(user.getId(), user.getAccount(), claims);
+        String newAccessToken = jwtProvider.generateAccessToken(user.getId(), user.getAccount(), new HashMap<>());
+        String newRefreshToken = jwtProvider.generateRefreshToken(user.getId());
+        RedisUtils.set(refreshKey, newRefreshToken, Duration.ofDays(7));
+
+        return LoginRespVO.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .build();
     }
 
+    /**
+     * 登出：删除RefreshToken，将AccessToken加入黑名单（TTL=AccessToken剩余有效期）
+     *
+     * @param userId      用户ID
+     * @param accessToken 当前AccessToken
+     */
     @Override
-    public void logout(Long userId) {
-        String refreshKey = REFRESH_TOKEN_PREFIX + userId;
-        redissonClient.getBucket(refreshKey).delete();
-    }
+    public void logout(Long userId, String accessToken) {
+        String refreshKey = RedisKeyConstants.REFRESH_TOKEN_PREFIX + userId;
+        RedisUtils.delete(refreshKey);
 
-    @Override
-    public List<SysMenu> getMenus(Long userId) {
-        List<SysMenu> allMenus = sysMenuMapper.selectByUserId(userId);
-        return buildMenuTree(allMenus, 0L);
-    }
-
-    private List<SysMenu> buildMenuTree(List<SysMenu> menus, Long parentId) {
-        List<SysMenu> tree = new ArrayList<>();
-        for (SysMenu menu : menus) {
-            if (menu.getParentId().equals(parentId)) {
-                menu.setChildren(buildMenuTree(menus, menu.getId()));
-                tree.add(menu);
+        if (StringUtils.isNotBlank(accessToken) && jwtProvider.validateToken(accessToken)) {
+            long remaining = jwtProvider.parseToken(accessToken).getExpiration().getTime() - System.currentTimeMillis();
+            if (remaining > 0) {
+                RedisUtils.set(RedisKeyConstants.TOKEN_BLACKLIST_PREFIX + accessToken, "1", Duration.ofMillis(remaining));
             }
         }
-        return tree;
     }
 
-    private void recordLoginLog(Long userId, String account, String ip,
-                                String userAgent, int status, String message) {
-        SysAccessLog log = new SysAccessLog();
-        log.setUserId(userId);
-        log.setNickName(account);
-        log.setIp(ip);
-        log.setUserAgent(userAgent);
-        log.setStatus(status);
-        log.setErrorMsg(message);
-        sysAccessLogMapper.insert(log);
+    /**
+     * 获取当前用户信息：userId=1为超级管理员拥有全部权限
+     */
+    @Override
+    public UserInfoRespVO getCurrentUserInfo(Long userId) {
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null) {
+            throw new SystemException(SystemErrorCode.ACCOUNT_NOT_FOUND);
+        }
+
+        UserInfoRespVO.UserVO userVO = UserInfoRespVO.UserVO.builder()
+                .id(user.getId())
+                .account(user.getAccount())
+                .nickName(user.getNickName())
+                .avatarUrl(user.getAvatarUrl())
+                .phone(user.getPhone())
+                .email(user.getEmail())
+                .build();
+
+        List<String> roles = sysUserMapper.selectRoleCodesByUserId(userId);
+
+        List<SysMenu> allMenus;
+        if (userId == 1L) {
+            allMenus = sysMenuMapper.selectAll();
+        } else {
+            allMenus = sysMenuMapper.selectByUserId(userId);
+        }
+
+        List<SysMenu> menuTree = buildMenuTree(allMenus);
+
+        List<String> permissions = allMenus.stream()
+                .map(SysMenu::getPermission)
+                .filter(StringUtils::isNotBlank)
+                .distinct()
+                .toList();
+
+        return UserInfoRespVO.builder()
+                .user(userVO)
+                .roles(roles)
+                .menus(menuTree)
+                .permissions(permissions)
+                .build();
+    }
+
+    /**
+     * 构建菜单树（递归排序所有层级）
+     */
+    private List<SysMenu> buildMenuTree(List<SysMenu> menus) {
+        Map<Long, SysMenu> menuMap = menus.stream()
+                .collect(Collectors.toMap(SysMenu::getId, m -> m));
+        List<SysMenu> roots = new ArrayList<>();
+        for (SysMenu menu : menus) {
+            if (menu.getParentId() == null || menu.getParentId() == 0L) {
+                roots.add(menu);
+            } else {
+                SysMenu parent = menuMap.get(menu.getParentId());
+                if (parent != null) {
+                    if (parent.getChildren() == null) {
+                        parent.setChildren(new ArrayList<>());
+                    }
+                    parent.getChildren().add(menu);
+                }
+            }
+        }
+        sortMenusRecursively(roots);
+        return roots;
+    }
+
+    /**
+     * 递归排序菜单树
+     */
+    private void sortMenusRecursively(List<SysMenu> menus) {
+        menus.sort(Comparator.comparingInt(SysMenu::getSort));
+        menus.forEach(menu -> {
+            if (menu.getChildren() != null && !menu.getChildren().isEmpty()) {
+                sortMenusRecursively(menu.getChildren());
+            }
+        });
     }
 }

@@ -12,17 +12,29 @@ import lombok.Data;
  * @Version: 1.0.0
  */
 @Data
-public class LoginRequest {
+public class LoginReqDTO {
 
+    /**
+     * 账号
+     */
     @NotBlank(message = "账号不能为空")
     private String account;
 
+    /**
+     * 密码
+     */
     @NotBlank(message = "密码不能为空")
     private String password;
 
+    /**
+     * 验证码Key
+     */
     @NotBlank(message = "验证码Key不能为空")
     private String captchaKey;
 
+    /**
+     * 验证码
+     */
     @NotBlank(message = "验证码不能为空")
     private String captchaCode;
 }
