@@ -32,11 +32,11 @@ public class UserController {
     /**
      * 分页查询用户列表
      *
-     * @param query 查询条件
+     * @param query 查询条件+分页参数（JSON body）
      * @return 分页结果
      */
-    @GetMapping("/page")
-    public Response<PageResult<UserPageRespVO>> page(PageQuery<UserQueryDTO> query) {
+    @PostMapping("/page")
+    public Response<PageResult<UserPageRespVO>> page(@RequestBody PageQuery<UserQueryDTO> query) {
         return Response.success(userService.page(query));
     }
 

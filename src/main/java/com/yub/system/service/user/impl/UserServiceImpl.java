@@ -34,14 +34,22 @@ import java.util.List;
  * @Author: bing.yu
  * @CreateTime: 2026-06-11
  * @Description: 用户管理业务实现
- * @Version: 1.0.0
+ * @Version: 1.0.1
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private static final String DEFAULT_PASSWORD = "123456";
+    /**
+     * SM3("admin123") — 前端SM3哈希后的默认密码值
+     * 登录时前端发送 SM3(password)，后端 BCrypt 比对，
+     * 因此重置密码时需存储 BCrypt(SM3(password)) 以保持链路一致。
+     */
+    private static final String DEFAULT_PASSWORD_SM3 = "667c756cf9334e328a56e44e906245c8e214c655a160f18fdb84d79c209c49cf";
+
+    /** 超级管理员用户ID（不允许删除/禁用/修改） */
+    private static final Long SUPER_ADMIN_ID = 1L;
 
     private final SysUserMapper sysUserMapper;
     private final SysUserRoleMapper sysUserRoleMapper;
@@ -148,7 +156,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void delete(Long id) {
-        if (id == 1L) {
+        if (SUPER_ADMIN_ID.equals(id)) {
             throw new SystemException(SystemErrorCode.SUPER_ADMIN_DELETE);
         }
         sysUserMapper.deleteById(id);
@@ -158,21 +166,25 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void resetPassword(Long id) {
-        if (id == 1L) {
+        if (SUPER_ADMIN_ID.equals(id)) {
             throw new SystemException(SystemErrorCode.SUPER_ADMIN_DELETE);
         }
-        String defaultPassword = sysParamMapper.selectValueByCode("user.default.password");
-        if (StringUtils.isBlank(defaultPassword)) {
-            defaultPassword = passwordEncoder.encode(DEFAULT_PASSWORD);
-            log.warn("系统参数 user.default.password 未配置，使用默认密码 123456");
+        // 系统参数值应为预计算的 SM3 哈希（与前端 SM3 哈希链路保持一致）
+        String paramValue = sysParamMapper.selectValueByCode("user.default.password");
+        if (StringUtils.isNotBlank(paramValue)) {
+            sysUserMapper.updatePassword(id, passwordEncoder.encode(paramValue));
+            log.info("用户 {} 密码已重置（使用系统参数配置）", id);
+        } else {
+            // 使用默认密码 admin123 的 SM3 哈希值 -> BCrypt(SM3("admin123"))
+            sysUserMapper.updatePassword(id, passwordEncoder.encode(DEFAULT_PASSWORD_SM3));
+            log.info("用户 {} 密码已重置为默认密码（admin123）", id);
         }
-        sysUserMapper.updatePassword(id, defaultPassword);
     }
 
     @Override
     @Transactional
     public void changeStatus(Long id, Integer status) {
-        if (id == 1L) {
+        if (SUPER_ADMIN_ID.equals(id)) {
             throw new SystemException(SystemErrorCode.SUPER_ADMIN_DISABLE);
         }
         sysUserMapper.updateStatus(id, status);

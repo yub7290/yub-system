@@ -1,8 +1,7 @@
 package com.yub.system.vo.auth;
 
 import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 /**
  * @Author: bing.yu
@@ -10,8 +9,7 @@ import lombok.Setter;
  * @Description: 验证码响应VO
  * @Version: 1.0
  */
-@Getter
-@Setter
+@Data
 @Builder
 public class CaptchaRespVO {
     /**

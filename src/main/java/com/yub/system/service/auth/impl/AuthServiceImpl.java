@@ -14,8 +14,10 @@ import com.yub.system.mapper.user.SysUserMapper;
 import com.yub.system.service.auth.AuthService;
 import com.yub.system.vo.auth.LoginRespVO;
 import com.yub.system.vo.auth.UserInfoRespVO;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RedissonClient;
 import org.springframework.dao.DataAccessException;
@@ -49,10 +51,13 @@ public class AuthServiceImpl implements AuthService {
     private final SysMenuMapper sysMenuMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    /** 超级管理员用户ID */
+    private static final Long SUPER_ADMIN_ID = 1L;
+
     private final RedissonClient redissonClient;
 
     /**
-     * 登录认证：速率检查→验证码校验→密码校验→账号状态检查→生成JWT→构建菜单树→记录登录日志
+     * 登录认证：验证码校验→账号密码校验→账号状态检查→生成JWT→记录登录信息
      * <p>注意：@Transactional 仅覆盖DB操作，Redis操作采用最终一致性策略
      */
     @Override
@@ -109,10 +114,12 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public LoginRespVO refresh(String refreshToken) {
-        if (!jwtProvider.validateToken(refreshToken)) {
+        // 使用 parseTokenIfValid 一次解析 Token，避免重复签名验证
+        Claims claims = jwtProvider.parseTokenIfValid(refreshToken);
+        if (claims == null) {
             throw new SystemException(SystemErrorCode.TOKEN_EXPIRED);
         }
-        String userId = jwtProvider.getUserId(refreshToken);
+        String userId = claims.getSubject();
         String refreshKey = RedisKeyConstants.REFRESH_TOKEN_PREFIX + userId;
         String storedToken = RedisUtils.get(refreshKey).orElse("").toString();
         if (StringUtils.isBlank(storedToken) || !storedToken.equals(refreshToken)) {
@@ -143,10 +150,13 @@ public class AuthServiceImpl implements AuthService {
         String refreshKey = RedisKeyConstants.REFRESH_TOKEN_PREFIX + userId;
         RedisUtils.delete(refreshKey);
 
-        if (StringUtils.isNotBlank(accessToken) && jwtProvider.validateToken(accessToken)) {
-            long remaining = jwtProvider.parseToken(accessToken).getExpiration().getTime() - System.currentTimeMillis();
+        // 使用 parseTokenIfValid 一次解析即可，避免重复签名验证
+        Claims claims = jwtProvider.parseTokenIfValid(accessToken);
+        if (claims != null) {
+            long remaining = claims.getExpiration().getTime() - System.currentTimeMillis();
             if (remaining > 0) {
-                RedisUtils.set(RedisKeyConstants.TOKEN_BLACKLIST_PREFIX + accessToken, "1", Duration.ofMillis(remaining));
+                String tokenHash = DigestUtils.sha256Hex(accessToken);
+                RedisUtils.set(RedisKeyConstants.TOKEN_BLACKLIST_PREFIX + tokenHash, "1", Duration.ofMillis(remaining));
             }
         }
     }
@@ -173,7 +183,7 @@ public class AuthServiceImpl implements AuthService {
         List<String> roles = sysUserMapper.selectRoleCodesByUserId(userId);
 
         List<SysMenu> allMenus;
-        if (userId == 1L) {
+        if (SUPER_ADMIN_ID.equals(userId)) {
             allMenus = sysMenuMapper.selectAll();
         } else {
             allMenus = sysMenuMapper.selectByUserId(userId);
@@ -200,7 +210,7 @@ public class AuthServiceImpl implements AuthService {
      */
     private List<SysMenu> buildMenuTree(List<SysMenu> menus) {
         Map<Long, SysMenu> menuMap = menus.stream()
-                .collect(Collectors.toMap(SysMenu::getId, m -> m));
+                .collect(Collectors.toMap(SysMenu::getId, m -> m, (a, b) -> a));
         List<SysMenu> roots = new ArrayList<>();
         for (SysMenu menu : menus) {
             if (menu.getParentId() == null || menu.getParentId() == 0L) {
