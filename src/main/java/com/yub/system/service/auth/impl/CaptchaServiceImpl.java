@@ -3,7 +3,7 @@ package com.yub.system.service.auth.impl;
 import com.wf.captcha.SpecCaptcha;
 import com.yub.common.constant.RedisKeyConstants;
 import com.yub.common.util.IdUtils;
-import com.yub.framework.util.RedisUtils;
+import com.yub.framework.redis.RedisUtils;
 import com.yub.system.service.auth.CaptchaService;
 import com.yub.system.vo.auth.CaptchaRespVO;
 import lombok.RequiredArgsConstructor;

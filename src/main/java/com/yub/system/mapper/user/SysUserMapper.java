@@ -1,5 +1,6 @@
 package com.yub.system.mapper.user;
 
+import com.yub.system.dto.user.UserQueryDTO;
 import com.yub.system.entity.user.SysUser;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -48,4 +49,50 @@ public interface SysUserMapper {
      * @return 影响行数
      */
     int updateLoginInfo(SysUser user);
+
+    /**
+     * 分页查询用户列表（PageHelper 自动分页）
+     *
+     * @param query 查询条件
+     * @return 用户列表
+     */
+    List<SysUser> select(@Param("query") UserQueryDTO query);
+
+    /**
+     * 新增用户
+     *
+     * @param user 用户实体
+     */
+    void insert(SysUser user);
+
+    /**
+     * 更新用户（选择性更新）
+     *
+     * @param user 用户实体
+     */
+    void updateById(SysUser user);
+
+    /**
+     * 逻辑删除用户
+     *
+     * @param id 用户ID
+     */
+    void deleteById(@Param("id") Long id);
+
+    /**
+     * 更新用户状态
+     *
+     * @param id     用户ID
+     * @param status 状态（1启用 0禁用）
+     */
+    void updateStatus(@Param("id") Long id, @Param("status") Integer status);
+
+    /**
+     * 更新用户密码
+     *
+     * @param id       用户ID
+     * @param password BCrypt加密密码
+     */
+    void updatePassword(@Param("id") Long id, @Param("password") String password);
+
 }

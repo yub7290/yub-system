@@ -3,7 +3,7 @@ package com.yub.system.service.auth.impl;
 import com.yub.common.constant.RedisKeyConstants;
 import com.yub.common.enums.StatusEnum;
 import com.yub.framework.security.JwtProvider;
-import com.yub.framework.util.RedisUtils;
+import com.yub.framework.redis.RedisUtils;
 import com.yub.system.dto.auth.LoginReqDTO;
 import com.yub.system.entity.menu.SysMenu;
 import com.yub.system.entity.user.SysUser;

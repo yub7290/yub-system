@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yub.system.mapper.role.SysRoleMapper">
+
+    <resultMap id="BaseResultMap" type="com.yub.system.entity.role.SysRole">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="code" property="code" />
+        <result column="description" property="description" />
+        <result column="status" property="status" />
+    </resultMap>
+
+    <select id="selectAllEnabled" resultMap="BaseResultMap">
+        SELECT id, name, code
+        FROM sys_role
+        WHERE status = 1 AND deleted = 0
+        ORDER BY id ASC
+    </select>
+
+</mapper>

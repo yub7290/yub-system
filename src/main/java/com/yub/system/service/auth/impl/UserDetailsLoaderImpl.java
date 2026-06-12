@@ -1,7 +1,7 @@
 package com.yub.system.service.auth.impl;
 
 import com.yub.common.enums.StatusEnum;
-import com.yub.framework.security.SysUserDetailsLoader;
+import com.yub.framework.security.UserDetailsLoader;
 import com.yub.system.entity.user.SysUser;
 import com.yub.system.mapper.user.SysUserMapper;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  */
 @Component
 @RequiredArgsConstructor
-public class SysUserDetailsLoaderImpl implements SysUserDetailsLoader {
+public class UserDetailsLoaderImpl implements UserDetailsLoader {
 
     private static final String ROLE_CACHE_PREFIX = "role_cache:";
     private static final Duration ROLE_CACHE_TTL = Duration.ofMinutes(5);

@@ -23,7 +23,13 @@ public enum SystemErrorCode implements ErrorCode {
     /** 令牌无效 */
     TOKEN_INVALID(100005, "令牌无效"),
     /** 账号不存在 */
-    ACCOUNT_NOT_FOUND(100006, "账号不存在");
+    ACCOUNT_NOT_FOUND(100006, "账号不存在"),
+    /** 账号已存在 */
+    ACCOUNT_EXISTS(100007, "账号已存在"),
+    /** 不允许删除超级管理员 */
+    SUPER_ADMIN_DELETE(100008, "不允许删除超级管理员"),
+    /** 不允许禁用超级管理员 */
+    SUPER_ADMIN_DISABLE(100009, "不允许禁用超级管理员");
 
     private final int code;
     private final String message;
