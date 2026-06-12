@@ -86,6 +86,7 @@ public class UserServiceImpl implements UserService {
                 .phone(user.getPhone())
                 .email(user.getEmail())
                 .avatarUrl(user.getAvatarUrl())
+                .deptId(user.getDeptId())
                 .status(user.getStatus())
                 .roleIds(roleIds)
                 .createTime(user.getCreateTime())
@@ -112,9 +113,11 @@ public class UserServiceImpl implements UserService {
         user.setNickName(req.getNickName());
         user.setPhone(req.getPhone());
         user.setEmail(req.getEmail());
+        user.setDeptId(req.getDeptId());
         user.setStatus(req.getStatus());
-        user.setCreateBy(SecurityUtils.getCurrentUserId());
-        user.setUpdateBy(SecurityUtils.getCurrentUserId());
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        user.setCreateBy(currentUserId);
+        user.setUpdateBy(currentUserId);
         sysUserMapper.insert(user);
 
         if (req.getRoleIds() != null && !req.getRoleIds().isEmpty()) {
@@ -138,8 +141,10 @@ public class UserServiceImpl implements UserService {
         user.setNickName(req.getNickName());
         user.setPhone(req.getPhone());
         user.setEmail(req.getEmail());
+        user.setDeptId(req.getDeptId());
         user.setStatus(req.getStatus());
-        user.setUpdateBy(SecurityUtils.getCurrentUserId());
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        user.setUpdateBy(currentUserId);
         sysUserMapper.updateById(user);
 
         // Only update roles if changed (order-independent comparison)
@@ -157,8 +162,8 @@ public class UserServiceImpl implements UserService {
                         .toList();
                 sysUserRoleMapper.insertBatch(roles);
             }
+            userDetailsLoader.evictRoleCache(req.getId());
         }
-        userDetailsLoader.evictRoleCache(req.getId());
     }
 
     @Override
@@ -179,13 +184,14 @@ public class UserServiceImpl implements UserService {
         }
         // 系统参数值应为预计算的 SM3 哈希（与前端 SM3 哈希链路保持一致）
         String paramValue = sysParamMapper.selectValueByCode("user.default.password");
+        Long operatorId = SecurityUtils.getCurrentUserId();
         if (StringUtils.isNotBlank(paramValue)) {
             sysUserMapper.updatePassword(id, passwordEncoder.encode(paramValue));
-            log.info("用户 {} 密码已重置（使用系统参数配置）", id);
+            log.info("用户 {} 密码已重置（使用系统参数配置），操作者={}", id, operatorId);
         } else {
             // 使用默认密码 admin123 的 SM3 哈希值 -> BCrypt(SM3("admin123"))
             sysUserMapper.updatePassword(id, passwordEncoder.encode(DEFAULT_PASSWORD_SM3));
-            log.info("用户 {} 密码已重置为默认密码（admin123）", id);
+            log.info("用户 {} 密码已重置为默认密码（admin123），操作者={}", id, operatorId);
         }
     }
 

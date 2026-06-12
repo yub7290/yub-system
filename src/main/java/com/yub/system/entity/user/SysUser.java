@@ -43,6 +43,10 @@ public class SysUser {
      */
     private String avatarUrl;
     /**
+     * 部门ID
+     */
+    private Long deptId;
+    /**
      * 状态（1=正常 0=禁用）
      */
     private Integer status;

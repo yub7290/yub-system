@@ -57,11 +57,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginRespVO login(LoginReqDTO request, String ip) {
         String captchaKey = RedisKeyConstants.CAPTCHA_PREFIX + request.getCaptchaKey();
-        String storedCode = RedisUtils.get(captchaKey).orElse("").toString();
+        String storedCode = RedisUtils.getAndDelete(captchaKey).orElse("").toString();
         if (StringUtils.isBlank(storedCode) || !storedCode.equalsIgnoreCase(request.getCaptchaCode())) {
             throw new SystemException(SystemErrorCode.CAPTCHA_ERROR);
         }
-        RedisUtils.delete(captchaKey);
 
         SysUser user = sysUserMapper.selectByAccount(request.getAccount());
         if (user == null) {

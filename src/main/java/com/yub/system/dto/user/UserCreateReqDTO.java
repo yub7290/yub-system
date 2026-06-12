@@ -1,5 +1,6 @@
 package com.yub.system.dto.user;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
@@ -41,6 +42,7 @@ public class UserCreateReqDTO {
     private String phone;
 
     /** 邮箱 */
+    @Email(message = "邮箱格式不正确")
     private String email;
 
     /** 状态（1=启用 0=禁用，默认启用） */

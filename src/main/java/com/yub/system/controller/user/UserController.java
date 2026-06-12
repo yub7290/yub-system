@@ -36,7 +36,7 @@ public class UserController {
      * @return 分页结果
      */
     @PostMapping("/page")
-    public Response<PageResult<UserPageRespVO>> page(@RequestBody PageQuery<UserQueryDTO> query) {
+    public Response<PageResult<UserPageRespVO>> page(@Valid @RequestBody PageQuery<UserQueryDTO> query) {
         return Response.success(userService.page(query));
     }
 
