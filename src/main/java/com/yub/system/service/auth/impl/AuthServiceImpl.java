@@ -19,14 +19,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.redisson.api.RedissonClient;
-import org.springframework.dao.DataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -54,14 +50,11 @@ public class AuthServiceImpl implements AuthService {
     /** 超级管理员用户ID */
     private static final Long SUPER_ADMIN_ID = 1L;
 
-    private final RedissonClient redissonClient;
-
     /**
      * 登录认证：验证码校验→账号密码校验→账号状态检查→生成JWT→记录登录信息
      * <p>注意：@Transactional 仅覆盖DB操作，Redis操作采用最终一致性策略
      */
     @Override
-    @Transactional
     public LoginRespVO login(LoginReqDTO request, String ip) {
         String captchaKey = RedisKeyConstants.CAPTCHA_PREFIX + request.getCaptchaKey();
         String storedCode = RedisUtils.get(captchaKey).orElse("").toString();
@@ -86,22 +79,16 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtProvider.generateAccessToken(user.getId(), user.getAccount(), new HashMap<>());
         String refreshToken = jwtProvider.generateRefreshToken(user.getId());
 
-        String refreshKey = RedisKeyConstants.REFRESH_TOKEN_PREFIX + user.getId();
-        RedisUtils.set(refreshKey, refreshToken, Duration.ofDays(7));
+        String refreshSetKey = RedisKeyConstants.REFRESH_TOKEN_PREFIX + user.getId();
+        RedisUtils.addToSet(refreshSetKey, refreshToken);
+        RedisUtils.expireSet(refreshSetKey, Duration.ofDays(7));
 
         LoginRespVO loginRespDTO = LoginRespVO.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
 
-        try {
-            user.setLastLoginIp(ip);
-            user.setLastLoginTime(LocalDateTime.now());
-            user.setLoginCount(user.getLoginCount() == null ? 1 : user.getLoginCount() + 1);
-            sysUserMapper.updateLoginInfo(user);
-        } catch (DataAccessException e) {
-            log.warn("登录日志记录失败", e);
-        }
+        sysUserMapper.updateLoginCountAtomic(user.getId(), ip);
 
         return loginRespDTO;
     }
@@ -120,23 +107,30 @@ public class AuthServiceImpl implements AuthService {
             throw new SystemException(SystemErrorCode.TOKEN_EXPIRED);
         }
         String userId = claims.getSubject();
-        String refreshKey = RedisKeyConstants.REFRESH_TOKEN_PREFIX + userId;
-        String storedToken = RedisUtils.get(refreshKey).orElse("").toString();
-        if (StringUtils.isBlank(storedToken) || !storedToken.equals(refreshToken)) {
-            throw new SystemException(SystemErrorCode.TOKEN_INVALID);
-        }
-        SysUser user = sysUserMapper.selectById(Long.valueOf(userId));
-        if (user == null || StatusEnum.isDisabled(user.getStatus())) {
-            throw new SystemException(SystemErrorCode.ACCOUNT_DISABLED);
-        }
-        String newAccessToken = jwtProvider.generateAccessToken(user.getId(), user.getAccount(), new HashMap<>());
-        String newRefreshToken = jwtProvider.generateRefreshToken(user.getId());
-        RedisUtils.set(refreshKey, newRefreshToken, Duration.ofDays(7));
+        String refreshSetKey = RedisKeyConstants.REFRESH_TOKEN_PREFIX + userId;
+        String lockKey = "lock:" + refreshSetKey;
+        RedisUtils.lock(lockKey);
+        try {
+            if (!RedisUtils.setContains(refreshSetKey, refreshToken)) {
+                throw new SystemException(SystemErrorCode.TOKEN_INVALID);
+            }
+            SysUser user = sysUserMapper.selectById(Long.valueOf(userId));
+            if (user == null || StatusEnum.isDisabled(user.getStatus())) {
+                throw new SystemException(SystemErrorCode.ACCOUNT_DISABLED);
+            }
+            String newAccessToken = jwtProvider.generateAccessToken(user.getId(), user.getAccount(), new HashMap<>());
+            String newRefreshToken = jwtProvider.generateRefreshToken(user.getId());
+            RedisUtils.removeFromSet(refreshSetKey, refreshToken);
+            RedisUtils.addToSet(refreshSetKey, newRefreshToken);
+            RedisUtils.expireSet(refreshSetKey, Duration.ofDays(7));
 
-        return LoginRespVO.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken)
-                .build();
+            return LoginRespVO.builder()
+                    .accessToken(newAccessToken)
+                    .refreshToken(newRefreshToken)
+                    .build();
+        } finally {
+            RedisUtils.unlock(lockKey);
+        }
     }
 
     /**
@@ -147,17 +141,23 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public void logout(Long userId, String accessToken) {
-        String refreshKey = RedisKeyConstants.REFRESH_TOKEN_PREFIX + userId;
-        RedisUtils.delete(refreshKey);
+        String refreshSetKey = RedisKeyConstants.REFRESH_TOKEN_PREFIX + userId;
+        String lockKey = "lock:" + refreshSetKey;
+        RedisUtils.lock(lockKey);
+        try {
+            RedisUtils.deleteSet(refreshSetKey);
 
-        // 使用 parseTokenIfValid 一次解析即可，避免重复签名验证
-        Claims claims = jwtProvider.parseTokenIfValid(accessToken);
-        if (claims != null) {
-            long remaining = claims.getExpiration().getTime() - System.currentTimeMillis();
-            if (remaining > 0) {
-                String tokenHash = DigestUtils.sha256Hex(accessToken);
-                RedisUtils.set(RedisKeyConstants.TOKEN_BLACKLIST_PREFIX + tokenHash, "1", Duration.ofMillis(remaining));
+            // 使用 parseTokenIfValid 一次解析即可，避免重复签名验证
+            Claims claims = jwtProvider.parseTokenIfValid(accessToken);
+            if (claims != null) {
+                long remaining = claims.getExpiration().getTime() - System.currentTimeMillis();
+                if (remaining > 0) {
+                    String tokenHash = DigestUtils.sha256Hex(accessToken);
+                    RedisUtils.set(RedisKeyConstants.TOKEN_BLACKLIST_PREFIX + tokenHash, "1", Duration.ofMillis(remaining));
+                }
             }
+        } finally {
+            RedisUtils.unlock(lockKey);
         }
     }
 
@@ -233,7 +233,7 @@ public class AuthServiceImpl implements AuthService {
      * 递归排序菜单树
      */
     private void sortMenusRecursively(List<SysMenu> menus) {
-        menus.sort(Comparator.comparingInt(SysMenu::getSort));
+        menus.sort(Comparator.comparing(SysMenu::getSort, Comparator.nullsLast(Comparator.naturalOrder())));
         menus.forEach(menu -> {
             if (menu.getChildren() != null && !menu.getChildren().isEmpty()) {
                 sortMenusRecursively(menu.getChildren());

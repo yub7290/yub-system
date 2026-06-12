@@ -14,7 +14,7 @@
     </delete>
 
     <select id="selectRoleIdsByUserId" resultType="long">
-        SELECT role_id FROM sys_user_role WHERE user_id = #{userId}
+        SELECT role_id FROM sys_user_role WHERE user_id = #{userId} ORDER BY role_id
     </select>
 
 </mapper>

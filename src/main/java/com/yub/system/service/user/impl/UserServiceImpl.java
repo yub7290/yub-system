@@ -5,6 +5,7 @@ import com.github.pagehelper.PageInfo;
 import com.yub.common.model.PageQuery;
 import com.yub.common.model.PageResult;
 import com.yub.framework.security.SecurityUtils;
+import com.yub.framework.security.UserDetailsLoader;
 import com.yub.framework.util.BeanUtils;
 import com.yub.system.dto.user.UserCreateReqDTO;
 import com.yub.system.dto.user.UserQueryDTO;
@@ -26,6 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -55,6 +57,7 @@ public class UserServiceImpl implements UserService {
     private final SysUserRoleMapper sysUserRoleMapper;
     private final SysParamMapper sysParamMapper;
     private final PasswordEncoder passwordEncoder;
+    private final UserDetailsLoader userDetailsLoader;
 
     @Override
     public PageResult<UserPageRespVO> page(PageQuery<UserQueryDTO> pageQuery) {
@@ -98,7 +101,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void create(UserCreateReqDTO req) {
-        SysUser exist = sysUserMapper.selectByAccount(req.getAccount());
+        SysUser exist = sysUserMapper.selectByAccountIncludeDeleted(req.getAccount());
         if (exist != null) {
             throw new SystemException(SystemErrorCode.ACCOUNT_EXISTS);
         }
@@ -139,18 +142,23 @@ public class UserServiceImpl implements UserService {
         user.setUpdateBy(SecurityUtils.getCurrentUserId());
         sysUserMapper.updateById(user);
 
-        sysUserRoleMapper.deleteByUserId(req.getId());
-        if (req.getRoleIds() != null && !req.getRoleIds().isEmpty()) {
-            List<SysUserRole> roles = req.getRoleIds().stream()
-                    .map(roleId -> {
-                        SysUserRole ur = new SysUserRole();
-                        ur.setUserId(req.getId());
-                        ur.setRoleId(roleId);
-                        return ur;
-                    })
-                    .toList();
-            sysUserRoleMapper.insertBatch(roles);
+        // Only update roles if changed (order-independent comparison)
+        List<Long> oldRoleIds = sysUserRoleMapper.selectRoleIdsByUserId(req.getId());
+        if (req.getRoleIds() != null && !new HashSet<>(req.getRoleIds()).equals(new HashSet<>(oldRoleIds))) {
+            sysUserRoleMapper.deleteByUserId(req.getId());
+            if (!req.getRoleIds().isEmpty()) {
+                List<SysUserRole> roles = req.getRoleIds().stream()
+                        .map(roleId -> {
+                            SysUserRole ur = new SysUserRole();
+                            ur.setUserId(req.getId());
+                            ur.setRoleId(roleId);
+                            return ur;
+                        })
+                        .toList();
+                sysUserRoleMapper.insertBatch(roles);
+            }
         }
+        userDetailsLoader.evictRoleCache(req.getId());
     }
 
     @Override
@@ -167,7 +175,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void resetPassword(Long id) {
         if (SUPER_ADMIN_ID.equals(id)) {
-            throw new SystemException(SystemErrorCode.SUPER_ADMIN_DELETE);
+            throw new SystemException(SystemErrorCode.SUPER_ADMIN_RESET_PASSWORD);
         }
         // 系统参数值应为预计算的 SM3 哈希（与前端 SM3 哈希链路保持一致）
         String paramValue = sysParamMapper.selectValueByCode("user.default.password");

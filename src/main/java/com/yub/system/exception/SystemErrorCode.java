@@ -29,7 +29,9 @@ public enum SystemErrorCode implements ErrorCode {
     /** 不允许删除超级管理员 */
     SUPER_ADMIN_DELETE(100008, "不允许删除超级管理员"),
     /** 不允许禁用超级管理员 */
-    SUPER_ADMIN_DISABLE(100009, "不允许禁用超级管理员");
+    SUPER_ADMIN_DISABLE(100009, "不允许禁用超级管理员"),
+    /** 不允许重置超级管理员密码 */
+    SUPER_ADMIN_RESET_PASSWORD(100010, "不允许重置超级管理员密码");
 
     private final int code;
     private final String message;

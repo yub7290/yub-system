@@ -27,6 +27,14 @@ public interface SysUserMapper {
     SysUser selectByAccount(@Param("account") String account);
 
     /**
+     * 根据账号查询用户（含逻辑删除）
+     *
+     * @param account 账号
+     * @return 用户实体，无则null
+     */
+    SysUser selectByAccountIncludeDeleted(@Param("account") String account);
+
+    /**
      * 根据用户ID查询用户
      *
      * @param id 用户ID
@@ -49,6 +57,15 @@ public interface SysUserMapper {
      * @return 影响行数
      */
     int updateLoginInfo(SysUser user);
+
+    /**
+     * 原子更新用户登录次数（避免并发丢失更新）
+     *
+     * @param id          用户ID
+     * @param lastLoginIp 最后登录IP
+     * @return 影响行数
+     */
+    int updateLoginCountAtomic(@Param("id") Long id, @Param("lastLoginIp") String lastLoginIp);
 
     /**
      * 分页查询用户列表（PageHelper 自动分页）

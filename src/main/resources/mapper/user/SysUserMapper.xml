@@ -32,6 +32,12 @@
         WHERE account = #{account} AND deleted = 0
     </select>
 
+    <select id="selectByAccountIncludeDeleted" resultType="com.yub.system.entity.user.SysUser">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_user
+        WHERE account = #{account}
+    </select>
+
     <select id="selectById" resultType="com.yub.system.entity.user.SysUser">
         SELECT <include refid="baseColumns"/>
         FROM sys_user
@@ -49,6 +55,12 @@
         UPDATE sys_user
         SET last_login_time = #{lastLoginTime}, last_login_ip = #{lastLoginIp}, login_count = #{loginCount}
         WHERE id = #{id}
+    </update>
+
+    <update id="updateLoginCountAtomic">
+        UPDATE sys_user SET login_count = COALESCE(login_count, 0) + 1,
+            last_login_time = NOW(), last_login_ip = #{lastLoginIp}
+        WHERE id = #{id} AND deleted = 0
     </update>
 
     <select id="select" resultMap="BaseResultMap">
@@ -85,7 +97,7 @@
             status      = #{status},
             update_time = NOW(),
             update_by   = #{updateBy}
-        WHERE id = #{id}
+        WHERE id = #{id} AND deleted = 0
     </update>
 
     <update id="deleteById">
@@ -93,11 +105,11 @@
     </update>
 
     <update id="updateStatus">
-        UPDATE sys_user SET status = #{status} WHERE id = #{id}
+        UPDATE sys_user SET status = #{status} WHERE id = #{id} AND deleted = 0
     </update>
 
     <update id="updatePassword">
-        UPDATE sys_user SET password = #{password} WHERE id = #{id}
+        UPDATE sys_user SET password = #{password} WHERE id = #{id} AND deleted = 0
     </update>
 
 </mapper>

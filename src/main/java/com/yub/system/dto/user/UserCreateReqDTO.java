@@ -1,6 +1,5 @@
 package com.yub.system.dto.user;
 
-import com.yub.framework.validation.PasswordStrength;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
@@ -26,10 +25,9 @@ public class UserCreateReqDTO {
     @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "账号只能包含字母、数字和下划线")
     private String account;
 
-    /** 密码 */
+    /** 密码（前端 SM3 哈希后的值，长度固定 64 位） */
     @NotBlank(message = "密码不能为空")
-    @Size(min = 6, max = 100, message = "密码长度6-100个字符")
-    @PasswordStrength
+    @Size(min = 64, max = 64, message = "密码格式异常")
     private String password;
 
     /** 昵称 */

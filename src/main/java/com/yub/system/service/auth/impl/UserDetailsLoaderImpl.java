@@ -4,9 +4,8 @@ import com.yub.common.enums.StatusEnum;
 import com.yub.framework.security.UserDetailsLoader;
 import com.yub.system.entity.user.SysUser;
 import com.yub.system.mapper.user.SysUserMapper;
+import com.yub.framework.redis.RedisUtils;
 import lombok.RequiredArgsConstructor;
-import org.redisson.api.RBucket;
-import org.redisson.api.RedissonClient;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,7 +32,6 @@ public class UserDetailsLoaderImpl implements UserDetailsLoader {
     private static final Duration ROLE_CACHE_TTL = Duration.ofMinutes(5);
 
     private final SysUserMapper sysUserMapper;
-    private final RedissonClient redissonClient;
 
     /**
      * 从数据库加载用户详情，角色列表使用Redis缓存减少DB查询
@@ -56,15 +54,18 @@ public class UserDetailsLoaderImpl implements UserDetailsLoader {
                 .build();
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
+    public void evictRoleCache(Long userId) {
+        RedisUtils.delete(ROLE_CACHE_PREFIX + userId);
+    }
+
     private List<String> getRoleCodes(Long userId) {
-        RBucket<List<String>> bucket = redissonClient.getBucket(ROLE_CACHE_PREFIX + userId);
-        List<String> cached = bucket.get();
+        List<String> cached = RedisUtils.<List<String>>get(ROLE_CACHE_PREFIX + userId).orElse(null);
         if (cached != null) {
             return cached;
         }
         List<String> roleCodes = sysUserMapper.selectRoleCodesByUserId(userId);
-        bucket.set(roleCodes, ROLE_CACHE_TTL);
+        RedisUtils.set(ROLE_CACHE_PREFIX + userId, roleCodes, (int) ROLE_CACHE_TTL.toMinutes());
         return roleCodes;
     }
 }
