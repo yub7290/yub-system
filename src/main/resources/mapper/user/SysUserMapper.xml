@@ -114,4 +114,8 @@
         UPDATE sys_user SET password = #{password} WHERE id = #{id} AND deleted = 0
     </update>
 
+    <select id="countByDeptId" resultType="int">
+        SELECT COUNT(1) FROM sys_user WHERE dept_id = #{deptId} AND deleted = 0
+    </select>
+
 </mapper>

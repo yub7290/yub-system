@@ -112,4 +112,12 @@ public interface SysUserMapper {
      */
     void updatePassword(@Param("id") Long id, @Param("password") String password);
 
+    /**
+     * 统计指定部门下的用户数量
+     *
+     * @param deptId 部门ID
+     * @return 用户数量
+     */
+    int countByDeptId(@Param("deptId") Long deptId);
+
 }

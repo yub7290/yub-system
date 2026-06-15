@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 用户分页响应 VO
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
  * @Author: bing.yu
  * @CreateTime: 2026-06-11
  * @Description: 用户分页列表响应
- * @Version: 1.0.0
+ * @Version: 1.1.0
  */
 @Data
 @Builder
@@ -38,6 +39,9 @@ public class UserPageRespVO {
 
     /** 状态（1=启用 0=禁用） */
     private Integer status;
+
+    /** 角色名称列表 */
+    private List<String> roleNames;
 
     /** 创建时间 */
     private LocalDateTime createTime;

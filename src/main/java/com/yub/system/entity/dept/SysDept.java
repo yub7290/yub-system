@@ -1,37 +1,38 @@
-package com.yub.system.entity.role;
+package com.yub.system.entity.dept;
 
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * 角色实体
+ * 部门实体
  *
  * @Author: bing.yu
- * @CreateTime: 2026-06-10
- * @Description: 角色实体
+ * @CreateTime: 2026-06-15
+ * @Description: 部门实体
  * @Version: 1.0.0
  */
 @Data
-public class SysRole {
+public class SysDept {
     /**
-     * 角色ID
+     * 部门ID
      */
     private Long id;
     /**
-     * 角色名称
+     * 父部门ID（0为根）
      */
-    private String name;
+    private Long parentId;
     /**
-     * 角色编码
+     * 部门名称
      */
-    private String code;
+    private String deptName;
     /**
-     * 角色描述
+     * 部门编码（唯一）
      */
-    private String description;
+    private String deptCode;
     /**
-     * 排序
+     * 排序（越小越靠前）
      */
     private Integer sort;
     /**
@@ -58,4 +59,8 @@ public class SysRole {
      * 逻辑删除（0=正常 1=已删除）
      */
     private Integer deleted;
+    /**
+     * 子部门列表
+     */
+    private List<SysDept> children;
 }

@@ -6,7 +6,7 @@ CREATE TABLE sys_menu (
     component   VARCHAR(200) DEFAULT NULL COMMENT '组件路径',
     icon        VARCHAR(50)  DEFAULT NULL COMMENT '图标',
     sort        INT          NOT NULL DEFAULT 0 COMMENT '排序',
-    menu_type   TINYINT      NOT NULL COMMENT '类型:1目录 2菜单 3按钮',
+    menu_type   TINYINT      NOT NULL DEFAULT 0 COMMENT '类型:0目录 1菜单 2按钮',
     permission  VARCHAR(100) DEFAULT NULL COMMENT '权限标识',
     status      TINYINT      NOT NULL DEFAULT 1 COMMENT '状态:1启用 0禁用',
     create_time DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

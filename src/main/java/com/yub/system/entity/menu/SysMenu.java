@@ -67,6 +67,17 @@ public class SysMenu {
      * 逻辑删除（0=正常 1=已删除）
      */
     private Integer deleted;
+
+    /**
+     * 创建人
+     */
+    private Long createBy;
+
+    /**
+     * 更新人
+     */
+    private Long updateBy;
+
     /**
      * 子菜单列表
      */

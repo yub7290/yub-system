@@ -12,7 +12,18 @@
         <result column="sort" property="sort"/>
         <result column="menu_type" property="menuType"/>
         <result column="permission" property="permission"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="deleted" property="deleted"/>
     </resultMap>
+
+    <sql id="baseColumns">
+        id, parent_id, name, path, component, icon, sort, menu_type, permission,
+        status, create_time, update_time, create_by, update_by, deleted
+    </sql>
 
     <select id="selectByUserId" resultMap="SysMenuMap">
         SELECT DISTINCT m.id, m.parent_id, m.name, m.path, m.component, m.icon,
@@ -26,10 +37,88 @@
 
     <select id="selectAll" resultMap="SysMenuMap">
         SELECT id, parent_id, name, path, component, icon,
-               sort, menu_type, permission
+               sort, menu_type, permission, status
         FROM sys_menu
         WHERE status = 1 AND deleted = 0
         ORDER BY sort ASC
     </select>
+
+    <select id="selectList" resultMap="SysMenuMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_menu
+        WHERE deleted = 0
+        <if test="query.name != null and query.name != ''">
+            AND name LIKE CONCAT('%', #{query.name}, '%')
+        </if>
+        <if test="query.status != null">
+            AND status = #{query.status}
+        </if>
+        ORDER BY parent_id ASC, sort ASC, id ASC
+    </select>
+
+    <select id="selectManagementList" resultMap="SysMenuMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_menu
+        WHERE deleted = 0
+        ORDER BY parent_id ASC, sort ASC, id ASC
+    </select>
+
+    <select id="selectById" resultMap="SysMenuMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_menu
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectByNameAndParentId" resultMap="SysMenuMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_menu
+        WHERE name = #{name} AND parent_id = #{parentId} AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="countByParentId" resultType="int">
+        SELECT COUNT(1) FROM sys_menu WHERE parent_id = #{parentId} AND deleted = 0
+    </select>
+
+    <select id="selectByIds" resultMap="SysMenuMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_menu
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND deleted = 0
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_menu (parent_id, name, path, component, icon, sort, menu_type, permission,
+                              status, create_time, update_time, create_by, update_by)
+        VALUES (#{parentId}, #{name}, #{path}, #{component}, #{icon}, #{sort}, #{menuType}, #{permission},
+                #{status}, NOW(), NOW(), #{createBy}, #{updateBy})
+    </insert>
+
+    <update id="updateById">
+        UPDATE sys_menu
+        SET parent_id   = #{parentId},
+            name        = #{name},
+            path        = #{path},
+            component   = #{component},
+            icon        = #{icon},
+            sort        = #{sort},
+            menu_type   = #{menuType},
+            permission  = #{permission},
+            status      = #{status},
+            update_time = NOW(),
+            update_by   = #{updateBy}
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE sys_menu SET deleted = 1 WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE sys_menu SET status = #{status} WHERE id = #{id} AND deleted = 0
+    </update>
 
 </mapper>

@@ -67,6 +67,12 @@ public class UserServiceImpl implements UserService {
 
         List<UserPageRespVO> records = BeanUtils.copyList(list, UserPageRespVO.class);
 
+        // 批量填充角色名称
+        for (UserPageRespVO vo : records) {
+            List<String> roleNames = sysUserRoleMapper.selectRoleNamesByUserId(vo.getId());
+            vo.setRoleNames(roleNames);
+        }
+
         return PageResult.of(records, pageInfo.getTotal());
     }
 

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yub.system.mapper.dept.SysDeptMapper">
+
+    <resultMap id="BaseResultMap" type="com.yub.system.entity.dept.SysDept">
+        <id column="id" property="id" />
+        <result column="parent_id" property="parentId" />
+        <result column="dept_name" property="deptName" />
+        <result column="dept_code" property="deptCode" />
+        <result column="sort" property="sort" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="create_by" property="createBy" />
+        <result column="update_by" property="updateBy" />
+        <result column="deleted" property="deleted" />
+    </resultMap>
+
+    <sql id="baseColumns">
+        id, parent_id, dept_name, dept_code, sort, status,
+        create_time, update_time, create_by, update_by, deleted
+    </sql>
+
+    <select id="selectTree" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_dept
+        WHERE deleted = 0
+        ORDER BY parent_id ASC, sort ASC, id ASC
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_dept
+        WHERE deleted = 0
+        <if test="query.deptName != null and query.deptName != ''">
+            AND dept_name LIKE CONCAT('%', #{query.deptName}, '%')
+        </if>
+        <if test="query.status != null">
+            AND status = #{query.status}
+        </if>
+        ORDER BY parent_id ASC, sort ASC, id ASC
+    </select>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_dept
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectByCode" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_dept
+        WHERE dept_code = #{deptCode}
+    </select>
+
+    <select id="selectByNameAndParentId" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_dept
+        WHERE dept_name = #{deptName} AND parent_id = #{parentId} AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="countByParentId" resultType="int">
+        SELECT COUNT(1) FROM sys_dept WHERE parent_id = #{parentId} AND deleted = 0
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_dept (parent_id, dept_name, dept_code, sort, status,
+                              create_time, update_time, create_by, update_by)
+        VALUES (#{parentId}, #{deptName}, #{deptCode}, #{sort}, #{status},
+                NOW(), NOW(), #{createBy}, #{updateBy})
+    </insert>
+
+    <update id="updateById">
+        UPDATE sys_dept
+        SET parent_id   = #{parentId},
+            dept_name   = #{deptName},
+            dept_code   = #{deptCode},
+            sort        = #{sort},
+            status      = #{status},
+            update_time = NOW(),
+            update_by   = #{updateBy}
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE sys_dept SET deleted = 1 WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE sys_dept SET status = #{status} WHERE id = #{id} AND deleted = 0
+    </update>
+
+</mapper>
