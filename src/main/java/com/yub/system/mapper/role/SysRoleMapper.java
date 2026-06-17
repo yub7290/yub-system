@@ -50,6 +50,14 @@ public interface SysRoleMapper {
     SysRole selectByCode(@Param("code") String code);
 
     /**
+     * 根据名称查询角色（用于唯一性校验）
+     *
+     * @param name 角色名称
+     * @return 角色
+     */
+    SysRole selectByName(@Param("name") String name);
+
+    /**
      * 新增角色
      *
      * @param role 角色

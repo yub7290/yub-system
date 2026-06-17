@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 public class DeptServiceImpl implements SysDeptService {
 
     private final SysDeptMapper sysDeptMapper;
+    // 直接依赖 SysUserMapper 查询部门下用户数（同模块内，避免接口膨胀）
     private final SysUserMapper sysUserMapper;
 
     @Override
@@ -232,8 +233,11 @@ public class DeptServiceImpl implements SysDeptService {
         if (!allAncestorIds.isEmpty()) {
             List<Long> ancestorIds = new ArrayList<>(allAncestorIds);
             boolean foundNew = true;
-            while (foundNew) {
+            int maxDepth = 10;
+            int depth = 0;
+            while (foundNew && depth < maxDepth) {
                 foundNew = false;
+                depth++;
                 List<Long> toQuery = new ArrayList<>(ancestorIds);
                 for (Long pid : toQuery) {
                     SysDept ancestor = sysDeptMapper.selectById(pid);

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 /**
@@ -45,6 +46,7 @@ public class DeptController {
      * @return 部门树
      */
     @GetMapping("/tree")
+    @PreAuthorize("isAuthenticated()")
     public Response<List<SysDept>> tree(@RequestParam(required = false) String deptName,
                                         @RequestParam(required = false) Integer status) {
         if ((deptName != null && !deptName.isEmpty()) || status != null) {
@@ -63,6 +65,7 @@ public class DeptController {
      * @return 部门详情
      */
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public Response<DeptDetailRespVO> getDetail(@PathVariable Long id) {
         return Response.success(sysDeptService.getDetail(id));
     }
@@ -74,6 +77,7 @@ public class DeptController {
      * @return 部门ID
      */
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public Response<Long> create(@Valid @RequestBody DeptCreateReqDTO dto) {
         return Response.success(sysDeptService.create(dto));
     }
@@ -85,6 +89,7 @@ public class DeptController {
      * @return 响应
      */
     @PutMapping
+    @PreAuthorize("isAuthenticated()")
     public Response<Void> update(@Valid @RequestBody DeptUpdateReqDTO dto) {
         sysDeptService.update(dto);
         return Response.success();
@@ -97,6 +102,7 @@ public class DeptController {
      * @return 响应
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public Response<Void> delete(@PathVariable Long id) {
         sysDeptService.delete(id);
         return Response.success();
@@ -110,6 +116,7 @@ public class DeptController {
      * @return 响应
      */
     @PutMapping("/{id}/status")
+    @PreAuthorize("isAuthenticated()")
     public Response<Void> changeStatus(@PathVariable Long id, @Valid @RequestBody StatusReqDTO dto) {
         sysDeptService.changeStatus(id, dto.getStatus());
         return Response.success();

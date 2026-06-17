@@ -25,7 +25,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -42,14 +44,23 @@ import java.util.stream.Collectors;
 public class RoleServiceImpl implements SysRoleService {
 
     private static final String ROLE_OPTIONS_CACHE_KEY = "system:role:options";
+    private static final Duration ROLE_OPTIONS_CACHE_TTL = Duration.ofMinutes(30);
 
     private final SysRoleMapper sysRoleMapper;
     private final SysRoleMenuMapper sysRoleMenuMapper;
     private final SysUserRoleMapper sysUserRoleMapper;
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<SysRole> selectAllEnabled() {
-        return sysRoleMapper.selectAllEnabled();
+        // Cache-Aside: 先读缓存，miss则查库并回填
+        Optional<List<SysRole>> cached = RedisUtils.get(ROLE_OPTIONS_CACHE_KEY);
+        if (cached.isPresent()) {
+            return cached.get();
+        }
+        List<SysRole> list = sysRoleMapper.selectAllEnabled();
+        RedisUtils.set(ROLE_OPTIONS_CACHE_KEY, list, (int) ROLE_OPTIONS_CACHE_TTL.toMinutes());
+        return list;
     }
 
     @Override
@@ -69,7 +80,7 @@ public class RoleServiceImpl implements SysRoleService {
     public RoleDetailRespVO getDetail(Long id) {
         SysRole role = sysRoleMapper.selectById(id);
         if (role == null) {
-            throw new SystemException(SystemErrorCode.ACCOUNT_NOT_FOUND);
+            throw new SystemException(SystemErrorCode.ROLE_NOT_FOUND);
         }
         List<Long> menuIds = sysRoleMenuMapper.selectMenuIdsByRoleId(id);
 
@@ -91,6 +102,9 @@ public class RoleServiceImpl implements SysRoleService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long create(RoleCreateReqDTO dto) {
+        // 角色名称唯一性校验
+        checkNameUnique(dto.getName(), null);
+
         SysRole exist = sysRoleMapper.selectByCode(dto.getCode());
         if (exist != null) {
             throw new SystemException(SystemErrorCode.ROLE_CODE_EXISTS);
@@ -119,8 +133,11 @@ public class RoleServiceImpl implements SysRoleService {
     public void update(RoleUpdateReqDTO dto) {
         SysRole role = sysRoleMapper.selectById(dto.getId());
         if (role == null) {
-            throw new SystemException(SystemErrorCode.ACCOUNT_NOT_FOUND);
+            throw new SystemException(SystemErrorCode.ROLE_NOT_FOUND);
         }
+
+        // 角色名称唯一性校验（排除自身）
+        checkNameUnique(dto.getName(), dto.getId());
 
         role.setName(dto.getName());
         role.setSort(dto.getSort() != null ? dto.getSort() : 0);
@@ -150,13 +167,24 @@ public class RoleServiceImpl implements SysRoleService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void changeStatus(Long id, Integer status) {
         SysRole role = sysRoleMapper.selectById(id);
         if (role == null) {
-            throw new SystemException(SystemErrorCode.ACCOUNT_NOT_FOUND);
+            throw new SystemException(SystemErrorCode.ROLE_NOT_FOUND);
         }
         sysRoleMapper.updateStatus(id, status);
         evictRoleOptionsCache();
+    }
+
+    /**
+     * 校验角色名称唯一性
+     */
+    private void checkNameUnique(String name, Long excludeId) {
+        SysRole exist = sysRoleMapper.selectByName(name);
+        if (exist != null && (excludeId == null || !exist.getId().equals(excludeId))) {
+            throw new SystemException(SystemErrorCode.ROLE_NAME_EXISTS);
+        }
     }
 
     private void insertRoleMenus(Long roleId, List<Long> menuIds) {

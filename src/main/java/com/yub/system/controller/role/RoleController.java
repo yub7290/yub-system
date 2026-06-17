@@ -10,9 +10,12 @@ import com.yub.system.dto.user.StatusReqDTO;
 import com.yub.system.entity.role.SysRole;
 import com.yub.system.service.role.SysRoleService;
 import com.yub.system.vo.role.RoleDetailRespVO;
+import com.yub.system.vo.role.RoleOptionRespVO;
 import com.yub.system.vo.role.RolePageRespVO;
+import com.yub.framework.util.BeanUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -45,8 +48,10 @@ public class RoleController {
      * @return 角色列表
      */
     @GetMapping("/options")
-    public Response<List<SysRole>> options() {
-        return Response.success(sysRoleService.selectAllEnabled());
+    @PreAuthorize("isAuthenticated()")
+    public Response<List<RoleOptionRespVO>> options() {
+        List<SysRole> roles = sysRoleService.selectAllEnabled();
+        return Response.success(BeanUtils.copyList(roles, RoleOptionRespVO.class));
     }
 
     /**
@@ -56,6 +61,7 @@ public class RoleController {
      * @return 分页结果
      */
     @PostMapping("/page")
+    @PreAuthorize("isAuthenticated()")
     public Response<PageResult<RolePageRespVO>> page(@RequestBody PageQuery<RoleQueryDTO> pageQuery) {
         return Response.success(sysRoleService.page(pageQuery));
     }
@@ -67,6 +73,7 @@ public class RoleController {
      * @return 角色详情
      */
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public Response<RoleDetailRespVO> getDetail(@PathVariable Long id) {
         return Response.success(sysRoleService.getDetail(id));
     }
@@ -78,6 +85,7 @@ public class RoleController {
      * @return 角色ID
      */
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public Response<Long> create(@Valid @RequestBody RoleCreateReqDTO dto) {
         return Response.success(sysRoleService.create(dto));
     }
@@ -89,6 +97,7 @@ public class RoleController {
      * @return 响应
      */
     @PutMapping
+    @PreAuthorize("isAuthenticated()")
     public Response<Void> update(@Valid @RequestBody RoleUpdateReqDTO dto) {
         sysRoleService.update(dto);
         return Response.success();
@@ -101,6 +110,7 @@ public class RoleController {
      * @return 响应
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public Response<Void> delete(@PathVariable Long id) {
         sysRoleService.delete(id);
         return Response.success();
@@ -114,6 +124,7 @@ public class RoleController {
      * @return 响应
      */
     @PutMapping("/{id}/status")
+    @PreAuthorize("isAuthenticated()")
     public Response<Void> changeStatus(@PathVariable Long id, @Valid @RequestBody StatusReqDTO dto) {
         sysRoleService.changeStatus(id, dto.getStatus());
         return Response.success();

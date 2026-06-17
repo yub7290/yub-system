@@ -47,6 +47,12 @@
         WHERE id = #{id} AND deleted = 0
     </select>
 
+    <select id="selectByName" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_role
+        WHERE name = #{name}
+    </select>
+
     <select id="selectByCode" resultType="com.yub.system.entity.role.SysRole">
         SELECT <include refid="baseColumns"/>
         FROM sys_role

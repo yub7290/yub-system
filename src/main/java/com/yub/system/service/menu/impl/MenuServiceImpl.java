@@ -203,9 +203,13 @@ public class MenuServiceImpl implements SysMenuService {
             for (SysMenu ancestor : ancestors) {
                 filteredMap.putIfAbsent(ancestor.getId(), ancestor);
             }
-            // 可能还有更上层的祖先需要继续加载
+            // 可能还有更上层的祖先需要继续加载（增加最大深度保护，防止环形引用死循环）
             boolean foundNew = true;
-            while (foundNew) {
+            int maxDepth = 10;
+            int depth = 0;
+            while (foundNew && depth < maxDepth) {
+                foundNew = false;
+                depth++;
                 foundNew = false;
                 List<Long> upperIds = new ArrayList<>();
                 for (SysMenu menu : new ArrayList<>(filteredMap.values())) {

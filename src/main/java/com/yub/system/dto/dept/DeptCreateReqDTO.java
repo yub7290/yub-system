@@ -2,6 +2,7 @@ package com.yub.system.dto.dept;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -23,6 +24,7 @@ public class DeptCreateReqDTO {
 
     /** 部门编码 */
     @Size(max = 50, message = "部门编码长度不能超过50个字符")
+    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "部门编码只能包含字母、数字和下划线")
     private String deptCode;
 
     /** 父部门ID（0为根） */

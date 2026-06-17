@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 /**
@@ -44,6 +45,7 @@ public class MenuController {
      * @return 菜单树
      */
     @GetMapping("/tree")
+    @PreAuthorize("isAuthenticated()")
     public Response<List<SysMenu>> tree(@RequestParam(required = false) String name,
                                         @RequestParam(required = false) Integer status) {
         if (name != null && !name.isEmpty()) {
@@ -59,6 +61,7 @@ public class MenuController {
      * @return 菜单详情
      */
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public Response<MenuDetailRespVO> getDetail(@PathVariable Long id) {
         return Response.success(sysMenuService.getDetail(id));
     }
@@ -70,6 +73,7 @@ public class MenuController {
      * @return 菜单ID
      */
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public Response<Long> create(@Valid @RequestBody MenuCreateReqDTO dto) {
         return Response.success(sysMenuService.create(dto));
     }
@@ -81,6 +85,7 @@ public class MenuController {
      * @return 响应
      */
     @PutMapping
+    @PreAuthorize("isAuthenticated()")
     public Response<Void> update(@Valid @RequestBody MenuUpdateReqDTO dto) {
         sysMenuService.update(dto);
         return Response.success();
@@ -93,6 +98,7 @@ public class MenuController {
      * @return 响应
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public Response<Void> delete(@PathVariable Long id) {
         sysMenuService.delete(id);
         return Response.success();
@@ -106,6 +112,7 @@ public class MenuController {
      * @return 响应
      */
     @PutMapping("/{id}/status")
+    @PreAuthorize("isAuthenticated()")
     public Response<Void> changeStatus(@PathVariable Long id, @Valid @RequestBody StatusReqDTO dto) {
         sysMenuService.changeStatus(id, dto.getStatus());
         return Response.success();

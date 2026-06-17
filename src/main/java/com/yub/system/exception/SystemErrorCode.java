@@ -51,7 +51,20 @@ public enum SystemErrorCode implements ErrorCode {
     /** 部门存在子部门无法删除 */
     DEPT_HAS_CHILDREN(100019, "该部门下存在子部门，无法删除"),
     /** 部门存在用户无法删除 */
-    DEPT_HAS_USERS(100020, "该部门下存在用户，无法删除");
+    DEPT_HAS_USERS(100020, "该部门下存在用户，无法删除"),
+
+    /** 字典类型不存在 */
+    DICT_TYPE_NOT_FOUND(100021, "字典类型不存在"),
+    /** 字典类型编码已存在 */
+    DICT_TYPE_EXISTS(100022, "字典类型编码已存在"),
+
+    /** 字典数据不存在 */
+    DICT_DATA_NOT_FOUND(100023, "字典数据不存在"),
+
+    /** 角色不存在 */
+    ROLE_NOT_FOUND(100024, "角色不存在"),
+    /** 角色名称已存在 */
+    ROLE_NAME_EXISTS(100025, "角色名称已存在");
 
     private final int code;
     private final String message;
