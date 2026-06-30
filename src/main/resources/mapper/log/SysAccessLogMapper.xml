@@ -2,11 +2,60 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.yub.system.mapper.log.SysAccessLogMapper">
 
+    <sql id="baseColumns">
+        id, user_id, nick_name, ip, method, url, user_agent, event_type,
+        status, error_msg, cost_time, create_time
+    </sql>
+
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO sys_access_log (user_id, nick_name, ip, user_agent, status, error_msg,
-                    method, url, event_type)
+                    method, url, event_type, cost_time)
         VALUES (#{userId}, #{nickName}, #{ip}, #{userAgent}, #{status}, #{errorMsg},
-                    #{method}, #{url}, #{eventType})
+                    #{method}, #{url}, #{eventType}, #{costTime})
     </insert>
+
+    <insert id="batchInsert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_access_log (user_id, nick_name, ip, user_agent, status, error_msg,
+                    method, url, event_type, cost_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.userId}, #{item.nickName}, #{item.ip}, #{item.userAgent}, #{item.status}, #{item.errorMsg},
+             #{item.method}, #{item.url}, #{item.eventType}, #{item.costTime})
+        </foreach>
+    </insert>
+
+    <select id="selectPage" resultType="com.yub.system.entity.log.SysAccessLog">
+        SELECT <include refid="baseColumns"/>
+        FROM sys_access_log
+        <where>
+            <if test="query.userId != null">
+                AND user_id = #{query.userId}
+            </if>
+            <if test="query.url != null and query.url != ''">
+                AND url LIKE CONCAT('%', #{query.url}, '%')
+            </if>
+            <if test="query.method != null and query.method != ''">
+                AND method = #{query.method}
+            </if>
+            <if test="query.status != null">
+                AND status = #{query.status}
+            </if>
+            <if test="query.eventType != null and query.eventType != ''">
+                AND event_type = #{query.eventType}
+            </if>
+            <if test="query.startTime != null">
+                AND create_time &gt;= #{query.startTime}
+            </if>
+            <if test="query.endTime != null">
+                AND create_time &lt;= #{query.endTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+    <delete id="deleteByCreateTime">
+        DELETE FROM sys_access_log WHERE create_time &lt; #{beforeTime}
+        LIMIT 10000
+    </delete>
 
 </mapper>

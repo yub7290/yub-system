@@ -1,5 +1,6 @@
 package com.yub.system.controller.menu;
 
+import com.yub.common.annotation.Log;
 import com.yub.common.model.Response;
 import com.yub.system.dto.menu.MenuCreateReqDTO;
 import com.yub.system.dto.menu.MenuUpdateReqDTO;
@@ -74,6 +75,7 @@ public class MenuController {
      */
     @PostMapping
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "新增菜单", type = "CREATE")
     public Response<Long> create(@Valid @RequestBody MenuCreateReqDTO dto) {
         return Response.success(sysMenuService.create(dto));
     }
@@ -86,6 +88,7 @@ public class MenuController {
      */
     @PutMapping
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "编辑菜单", type = "UPDATE")
     public Response<Void> update(@Valid @RequestBody MenuUpdateReqDTO dto) {
         sysMenuService.update(dto);
         return Response.success();
@@ -99,6 +102,7 @@ public class MenuController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "删除菜单", type = "DELETE")
     public Response<Void> delete(@PathVariable Long id) {
         sysMenuService.delete(id);
         return Response.success();
@@ -113,6 +117,7 @@ public class MenuController {
      */
     @PutMapping("/{id}/status")
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "切换菜单状态", type = "UPDATE")
     public Response<Void> changeStatus(@PathVariable Long id, @Valid @RequestBody StatusReqDTO dto) {
         sysMenuService.changeStatus(id, dto.getStatus());
         return Response.success();

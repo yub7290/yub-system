@@ -1,5 +1,6 @@
 package com.yub.system.controller.role;
 
+import com.yub.common.annotation.Log;
 import com.yub.common.model.PageQuery;
 import com.yub.common.model.PageResult;
 import com.yub.common.model.Response;
@@ -86,6 +87,7 @@ public class RoleController {
      */
     @PostMapping
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "新增角色", type = "CREATE")
     public Response<Long> create(@Valid @RequestBody RoleCreateReqDTO dto) {
         return Response.success(sysRoleService.create(dto));
     }
@@ -98,6 +100,7 @@ public class RoleController {
      */
     @PutMapping
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "编辑角色", type = "UPDATE")
     public Response<Void> update(@Valid @RequestBody RoleUpdateReqDTO dto) {
         sysRoleService.update(dto);
         return Response.success();
@@ -111,6 +114,7 @@ public class RoleController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "删除角色", type = "DELETE")
     public Response<Void> delete(@PathVariable Long id) {
         sysRoleService.delete(id);
         return Response.success();
@@ -125,6 +129,7 @@ public class RoleController {
      */
     @PutMapping("/{id}/status")
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "切换角色状态", type = "UPDATE")
     public Response<Void> changeStatus(@PathVariable Long id, @Valid @RequestBody StatusReqDTO dto) {
         sysRoleService.changeStatus(id, dto.getStatus());
         return Response.success();

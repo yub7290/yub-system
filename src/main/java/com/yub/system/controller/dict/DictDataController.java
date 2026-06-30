@@ -1,5 +1,6 @@
 package com.yub.system.controller.dict;
 
+import com.yub.common.annotation.Log;
 import com.yub.common.model.PageQuery;
 import com.yub.common.model.PageResult;
 import com.yub.common.model.Response;
@@ -47,6 +48,7 @@ public class DictDataController {
      * 新增字典数据
      */
     @PostMapping
+    @Log(value = "新增字典数据", type = "CREATE")
     public Response<Long> create(@Valid @RequestBody DictDataCreateReqDTO dto) {
         return Response.success(sysDictDataService.create(dto));
     }
@@ -55,6 +57,7 @@ public class DictDataController {
      * 编辑字典数据
      */
     @PutMapping
+    @Log(value = "编辑字典数据", type = "UPDATE")
     public Response<Void> update(@Valid @RequestBody DictDataUpdateReqDTO dto) {
         sysDictDataService.update(dto);
         return Response.success();
@@ -64,6 +67,7 @@ public class DictDataController {
      * 删除字典数据
      */
     @DeleteMapping("/{id}")
+    @Log(value = "删除字典数据", type = "DELETE")
     public Response<Void> delete(@PathVariable Long id) {
         sysDictDataService.delete(id);
         return Response.success();

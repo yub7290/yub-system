@@ -1,5 +1,6 @@
 package com.yub.system.controller.banner;
 
+import com.yub.common.annotation.Log;
 import com.yub.common.model.PageQuery;
 import com.yub.common.model.PageResult;
 import com.yub.common.model.Response;
@@ -68,6 +69,7 @@ public class BannerController {
      */
     @PostMapping
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "新增Banner", type = "CREATE")
     public Response<Long> create(@Valid @RequestBody BannerCreateReqDTO dto) {
         return Response.success(sysBannerService.create(dto));
     }
@@ -80,6 +82,7 @@ public class BannerController {
      */
     @PutMapping
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "编辑Banner", type = "UPDATE")
     public Response<Void> update(@Valid @RequestBody BannerUpdateReqDTO dto) {
         sysBannerService.update(dto);
         return Response.success();
@@ -93,6 +96,7 @@ public class BannerController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "删除Banner", type = "DELETE")
     public Response<Void> delete(@PathVariable Long id) {
         sysBannerService.delete(id);
         return Response.success();

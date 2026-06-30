@@ -55,7 +55,27 @@ public class SysAccessLog {
      */
     private String eventType;
     /**
+     * 耗时(ms)
+     */
+    private Integer costTime;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;
+
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
+
+    /**
+     * 创建人
+     */
+    private Long createBy;
+
+    /**
+     * 更新人
+     */
+    private Long updateBy;
 }

@@ -1,5 +1,6 @@
 package com.yub.system.controller.user;
 
+import com.yub.common.annotation.Log;
 import com.yub.common.model.PageQuery;
 import com.yub.common.model.PageResult;
 import com.yub.common.model.Response;
@@ -58,6 +59,7 @@ public class UserController {
      * @return 操作结果
      */
     @PostMapping
+    @Log(value = "新增用户", type = "CREATE")
     public Response<Void> create(@Valid @RequestBody UserCreateReqDTO req) {
         userService.create(req);
         return Response.success();
@@ -70,6 +72,7 @@ public class UserController {
      * @return 操作结果
      */
     @PutMapping
+    @Log(value = "编辑用户", type = "UPDATE")
     public Response<Void> update(@Valid @RequestBody UserUpdateReqDTO req) {
         userService.update(req);
         return Response.success();
@@ -82,6 +85,7 @@ public class UserController {
      * @return 操作结果
      */
     @DeleteMapping("/{id}")
+    @Log(value = "删除用户", type = "DELETE")
     public Response<Void> delete(@PathVariable("id") Long id) {
         userService.delete(id);
         return Response.success();
@@ -94,6 +98,7 @@ public class UserController {
      * @return 操作结果
      */
     @PutMapping("/{id}/password")
+    @Log(value = "重置用户密码", type = "UPDATE")
     public Response<Void> resetPassword(@PathVariable("id") Long id) {
         userService.resetPassword(id);
         return Response.success();
@@ -107,6 +112,7 @@ public class UserController {
      * @return 操作结果
      */
     @PutMapping("/{id}/status")
+    @Log(value = "启用/禁用用户", type = "UPDATE")
     public Response<Void> changeStatus(@PathVariable("id") Long id, @Valid @RequestBody StatusReqDTO req) {
         userService.changeStatus(id, req.getStatus());
         return Response.success();

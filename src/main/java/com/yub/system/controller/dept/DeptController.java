@@ -1,5 +1,6 @@
 package com.yub.system.controller.dept;
 
+import com.yub.common.annotation.Log;
 import com.yub.common.model.Response;
 import com.yub.system.dto.dept.DeptCreateReqDTO;
 import com.yub.system.dto.dept.DeptQueryDTO;
@@ -78,6 +79,7 @@ public class DeptController {
      */
     @PostMapping
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "新增部门", type = "CREATE")
     public Response<Long> create(@Valid @RequestBody DeptCreateReqDTO dto) {
         return Response.success(sysDeptService.create(dto));
     }
@@ -90,6 +92,7 @@ public class DeptController {
      */
     @PutMapping
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "编辑部门", type = "UPDATE")
     public Response<Void> update(@Valid @RequestBody DeptUpdateReqDTO dto) {
         sysDeptService.update(dto);
         return Response.success();
@@ -103,6 +106,7 @@ public class DeptController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "删除部门", type = "DELETE")
     public Response<Void> delete(@PathVariable Long id) {
         sysDeptService.delete(id);
         return Response.success();
@@ -117,6 +121,7 @@ public class DeptController {
      */
     @PutMapping("/{id}/status")
     @PreAuthorize("isAuthenticated()")
+    @Log(value = "切换部门状态", type = "UPDATE")
     public Response<Void> changeStatus(@PathVariable Long id, @Valid @RequestBody StatusReqDTO dto) {
         sysDeptService.changeStatus(id, dto.getStatus());
         return Response.success();
