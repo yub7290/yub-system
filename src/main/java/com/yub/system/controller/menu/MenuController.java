@@ -47,8 +47,8 @@ public class MenuController {
      */
     @GetMapping("/tree")
     @PreAuthorize("isAuthenticated()")
-    public Response<List<SysMenu>> tree(@RequestParam(required = false) String name,
-                                        @RequestParam(required = false) Integer status) {
+    public Response<List<SysMenu>> tree(@RequestParam(name = "name", required = false) String name,
+                                        @RequestParam(name = "status", required = false) Integer status) {
         if (name != null && !name.isEmpty()) {
             return Response.success(sysMenuService.selectTreeByCondition(name, status));
         }

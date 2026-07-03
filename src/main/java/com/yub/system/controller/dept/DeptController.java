@@ -48,8 +48,8 @@ public class DeptController {
      */
     @GetMapping("/tree")
     @PreAuthorize("isAuthenticated()")
-    public Response<List<SysDept>> tree(@RequestParam(required = false) String deptName,
-                                        @RequestParam(required = false) Integer status) {
+    public Response<List<SysDept>> tree(@RequestParam(name = "deptName", required = false) String deptName,
+                                        @RequestParam(name = "status", required = false) Integer status) {
         if ((deptName != null && !deptName.isEmpty()) || status != null) {
             DeptQueryDTO query = new DeptQueryDTO();
             query.setDeptName(deptName);
