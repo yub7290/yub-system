@@ -30,6 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 
+import static com.yub.system.constants.param.ParamKeyConstants.USER_DEFAULT_PASSWORD;
+
 /**
  * 用户管理 Service 实现
  *
@@ -50,7 +52,9 @@ public class UserServiceImpl implements UserService {
      */
     private static final String DEFAULT_PASSWORD_SM3 = "667c756cf9334e328a56e44e906245c8e214c655a160f18fdb84d79c209c49cf";
 
-    /** 超级管理员用户ID（不允许删除/禁用/修改） */
+    /**
+     * 超级管理员用户ID（不允许删除/禁用/修改）
+     */
     private static final Long SUPER_ADMIN_ID = 1L;
 
     private final SysUserMapper sysUserMapper;
@@ -189,7 +193,7 @@ public class UserServiceImpl implements UserService {
             throw new SystemException(SystemErrorCode.SUPER_ADMIN_RESET_PASSWORD);
         }
         // 系统参数值应为预计算的 SM3 哈希（与前端 SM3 哈希链路保持一致）
-        String paramValue = sysParamMapper.selectValueByCode("user.default.password");
+        String paramValue = sysParamMapper.selectValueByCode(USER_DEFAULT_PASSWORD);
         Long operatorId = SecurityUtils.getCurrentUserId();
         if (StringUtils.isNotBlank(paramValue)) {
             sysUserMapper.updatePassword(id, passwordEncoder.encode(paramValue));

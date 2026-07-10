@@ -67,7 +67,7 @@ public class DeptController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public Response<DeptDetailRespVO> getDetail(@PathVariable Long id) {
+    public Response<DeptDetailRespVO> getDetail(@PathVariable("id") Long id) {
         return Response.success(sysDeptService.getDetail(id));
     }
 
@@ -107,7 +107,7 @@ public class DeptController {
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @Log(value = "删除部门", type = "DELETE")
-    public Response<Void> delete(@PathVariable Long id) {
+    public Response<Void> delete(@PathVariable("id") Long id) {
         sysDeptService.delete(id);
         return Response.success();
     }
@@ -122,7 +122,7 @@ public class DeptController {
     @PutMapping("/{id}/status")
     @PreAuthorize("isAuthenticated()")
     @Log(value = "切换部门状态", type = "UPDATE")
-    public Response<Void> changeStatus(@PathVariable Long id, @Valid @RequestBody StatusReqDTO dto) {
+    public Response<Void> changeStatus(@PathVariable("id") Long id, @Valid @RequestBody StatusReqDTO dto) {
         sysDeptService.changeStatus(id, dto.getStatus());
         return Response.success();
     }

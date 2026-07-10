@@ -27,6 +27,14 @@ public interface SysMenuMapper {
     List<SysMenu> selectByUserId(@Param("userId") Long userId);
 
     /**
+     * 查询教师关联的菜单列表（通过 edu_teacher_role）
+     *
+     * @param teacherId 教师ID
+     * @return 菜单列表
+     */
+    List<SysMenu> selectByTeacherId(@Param("teacherId") Long teacherId);
+
+    /**
      * 查询所有启用的菜单（超级管理员用）
      *
      * @return 所有菜单列表

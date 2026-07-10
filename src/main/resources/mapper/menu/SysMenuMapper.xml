@@ -35,6 +35,16 @@
         ORDER BY m.sort ASC
     </select>
 
+    <select id="selectByTeacherId" resultMap="SysMenuMap">
+        SELECT DISTINCT m.id, m.parent_id, m.name, m.path, m.component, m.icon,
+               m.sort, m.menu_type, m.permission
+        FROM sys_menu m
+        INNER JOIN sys_role_menu rm ON m.id = rm.menu_id
+        INNER JOIN edu_teacher_role tr ON rm.role_id = tr.role_id
+        WHERE tr.teacher_id = #{teacherId} AND m.status = 1 AND m.deleted = 0
+        ORDER BY m.sort ASC
+    </select>
+
     <select id="selectAll" resultMap="SysMenuMap">
         SELECT id, parent_id, name, path, component, icon,
                sort, menu_type, permission, status

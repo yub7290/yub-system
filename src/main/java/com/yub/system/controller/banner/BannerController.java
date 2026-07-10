@@ -57,7 +57,7 @@ public class BannerController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public Response<BannerDetailRespVO> getDetail(@PathVariable Long id) {
+    public Response<BannerDetailRespVO> getDetail(@PathVariable("id") Long id) {
         return Response.success(sysBannerService.getDetail(id));
     }
 
@@ -97,7 +97,7 @@ public class BannerController {
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @Log(value = "删除Banner", type = "DELETE")
-    public Response<Void> delete(@PathVariable Long id) {
+    public Response<Void> delete(@PathVariable("id") Long id) {
         sysBannerService.delete(id);
         return Response.success();
     }

@@ -75,7 +75,7 @@ public class RoleController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public Response<RoleDetailRespVO> getDetail(@PathVariable Long id) {
+    public Response<RoleDetailRespVO> getDetail(@PathVariable("id") Long id) {
         return Response.success(sysRoleService.getDetail(id));
     }
 
@@ -115,7 +115,7 @@ public class RoleController {
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @Log(value = "删除角色", type = "DELETE")
-    public Response<Void> delete(@PathVariable Long id) {
+    public Response<Void> delete(@PathVariable("id") Long id) {
         sysRoleService.delete(id);
         return Response.success();
     }
@@ -130,7 +130,7 @@ public class RoleController {
     @PutMapping("/{id}/status")
     @PreAuthorize("isAuthenticated()")
     @Log(value = "切换角色状态", type = "UPDATE")
-    public Response<Void> changeStatus(@PathVariable Long id, @Valid @RequestBody StatusReqDTO dto) {
+    public Response<Void> changeStatus(@PathVariable("id") Long id, @Valid @RequestBody StatusReqDTO dto) {
         sysRoleService.changeStatus(id, dto.getStatus());
         return Response.success();
     }

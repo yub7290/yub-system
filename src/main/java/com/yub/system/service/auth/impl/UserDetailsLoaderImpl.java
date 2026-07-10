@@ -10,6 +10,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -24,14 +25,23 @@ import java.util.stream.Collectors;
  * @Description: 从数据库加载用户详情
  * @Version: 1.0.0
  */
-@Component
+@Component("adminUserDetailsService")
 @RequiredArgsConstructor
-public class UserDetailsLoaderImpl implements UserDetailsLoader {
+public class UserDetailsLoaderImpl implements UserDetailsLoader, UserDetailsService {
 
     private static final String ROLE_CACHE_PREFIX = "role_cache:";
     private static final Duration ROLE_CACHE_TTL = Duration.ofMinutes(5);
 
     private final SysUserMapper sysUserMapper;
+
+    /**
+     * Spring Security UserDetailsService 桥接方法
+     * <p>Filter 已剥离 TYPE: 前缀，username 为纯数字 ID</p>
+     */
+    @Override
+    public UserDetails loadUserByUsername(String username) {
+        return loadByUserId(Long.parseLong(username));
+    }
 
     /**
      * 从数据库加载用户详情，角色列表使用Redis缓存减少DB查询

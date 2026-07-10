@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yub.system.mapper.dashboard.DashboardMapper">
+
+    <select id="countCourses" resultType="long">
+        SELECT COUNT(id) FROM edu_course WHERE deleted = 0
+    </select>
+
+    <select id="countStudents" resultType="long">
+        SELECT COUNT(id) FROM edu_student WHERE deleted = 0
+    </select>
+
+    <select id="countTeachers" resultType="long">
+        SELECT COUNT(id) FROM edu_teacher WHERE deleted = 0
+    </select>
+
+    <select id="countQuestions" resultType="long">
+        SELECT COUNT(id) FROM edu_question WHERE deleted = 0
+    </select>
+
+    <select id="countTodayExams" resultType="long">
+        SELECT COUNT(id) FROM edu_exam_record WHERE DATE(submit_time) = CURDATE()
+    </select>
+
+    <select id="countTodayNewStudents" resultType="long">
+        SELECT COUNT(id) FROM edu_student WHERE DATE(create_time) = CURDATE()
+    </select>
+
+    <select id="countPendingOrders" resultType="long">
+        SELECT COUNT(id) FROM edu_course_order WHERE status = 0
+    </select>
+
+    <select id="countPendingHomework" resultType="long">
+        SELECT COUNT(id) FROM edu_homework_correction WHERE status IN (0, 1)
+    </select>
+
+    <select id="selectStudentGrowth" resultType="com.yub.system.vo.DashboardStatsRespVO$TrendItem">
+        SELECT DATE_FORMAT(d.date, '%m-%d') AS date, COUNT(es.id) AS count
+        FROM (
+            SELECT CURDATE() - INTERVAL seq DAY AS date
+            FROM (
+                SELECT 0 AS seq UNION SELECT 1 UNION SELECT 2 UNION SELECT 3
+                UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7
+                UNION SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11
+                UNION SELECT 12 UNION SELECT 13 UNION SELECT 14 UNION SELECT 15
+                UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19
+                UNION SELECT 20 UNION SELECT 21 UNION SELECT 22 UNION SELECT 23
+                UNION SELECT 24 UNION SELECT 25 UNION SELECT 26 UNION SELECT 27
+                UNION SELECT 28 UNION SELECT 29
+            ) AS days
+        ) d
+        LEFT JOIN edu_student es ON DATE(es.create_time) = d.date AND es.deleted = 0
+        GROUP BY d.date
+        ORDER BY d.date
+    </select>
+
+    <select id="selectOrderAndIncome" resultType="com.yub.system.vo.DashboardStatsRespVO$OrderTrendItem">
+        SELECT DATE_FORMAT(d.date, '%m-%d') AS date,
+               COUNT(o.id) AS orderCount,
+               IFNULL(SUM(o.amount), 0) AS income
+        FROM (
+            SELECT CURDATE() - INTERVAL seq DAY AS date
+            FROM (
+                SELECT 0 AS seq UNION SELECT 1 UNION SELECT 2 UNION SELECT 3
+                UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 UNION SELECT 7
+                UNION SELECT 8 UNION SELECT 9 UNION SELECT 10 UNION SELECT 11
+                UNION SELECT 12 UNION SELECT 13 UNION SELECT 14 UNION SELECT 15
+                UNION SELECT 16 UNION SELECT 17 UNION SELECT 18 UNION SELECT 19
+                UNION SELECT 20 UNION SELECT 21 UNION SELECT 22 UNION SELECT 23
+                UNION SELECT 24 UNION SELECT 25 UNION SELECT 26 UNION SELECT 27
+                UNION SELECT 28 UNION SELECT 29
+            ) AS days
+        ) d
+        LEFT JOIN edu_course_order o ON DATE(o.create_time) = d.date AND o.status = 1
+        GROUP BY d.date
+        ORDER BY d.date
+    </select>
+
+    <select id="selectExamPassRate" resultType="com.yub.system.vo.DashboardStatsRespVO$ExamPassRate">
+        SELECT
+            SUM(CASE WHEN is_pass = 1 THEN 1 ELSE 0 END) AS passed,
+            SUM(CASE WHEN is_pass = 0 AND status = 1 THEN 1 ELSE 0 END) AS failed,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS pending
+        FROM edu_exam_record
+        WHERE MONTH(create_time) = MONTH(CURDATE())
+          AND YEAR(create_time) = YEAR(CURDATE())
+    </select>
+
+    <select id="selectTopCourses" resultType="com.yub.system.vo.DashboardStatsRespVO$CourseRankItem">
+        SELECT id, name, student_count AS studentCount
+        FROM edu_course
+        WHERE deleted = 0
+        ORDER BY student_count DESC
+        LIMIT 5
+    </select>
+
+    <select id="selectRecentLogins" resultType="com.yub.system.vo.DashboardStatsRespVO$LoginRecord">
+        SELECT nick_name AS studentName,
+               DATE_FORMAT(create_time, '%m-%d %H:%i') AS loginTime,
+               ip
+        FROM sys_access_log
+        ORDER BY create_time DESC
+        LIMIT 10
+    </select>
+
+    <select id="selectRecentOperations" resultType="com.yub.system.vo.DashboardStatsRespVO$OperationRecord">
+        SELECT nick_name AS operator,
+               content,
+               DATE_FORMAT(create_time, '%m-%d %H:%i') AS time
+        FROM sys_opera_log
+        ORDER BY create_time DESC
+        LIMIT 10
+    </select>
+
+</mapper>

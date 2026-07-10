@@ -6,7 +6,10 @@ import com.yub.system.dto.banner.BannerCreateReqDTO;
 import com.yub.system.dto.banner.BannerPageReqDTO;
 import com.yub.system.dto.banner.BannerUpdateReqDTO;
 import com.yub.system.vo.banner.BannerDetailRespVO;
+import com.yub.system.entity.system.SysBanner;
 import com.yub.system.vo.banner.BannerPageRespVO;
+
+import java.util.List;
 
 /**
  * Banner 服务接口
@@ -55,4 +58,11 @@ public interface SysBannerService {
      * @param id Banner ID
      */
     void delete(Long id);
+
+    /**
+     * 查询所有启用状态的 Banner
+     *
+     * @return 启用状态的 Banner 列表
+     */
+    List<SysBanner> selectAllEnabled();
 }

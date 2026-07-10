@@ -35,7 +35,7 @@ public class DictTypeController {
     }
 
     @GetMapping("/{id}")
-    public Response<DictTypeDetailRespVO> getDetail(@PathVariable Long id) {
+    public Response<DictTypeDetailRespVO> getDetail(@PathVariable("id") Long id) {
         return Response.success(sysDictTypeService.getDetail(id));
     }
 
@@ -54,14 +54,14 @@ public class DictTypeController {
 
     @DeleteMapping("/{id}")
     @Log(value = "删除字典类型", type = "DELETE")
-    public Response<Void> delete(@PathVariable Long id) {
+    public Response<Void> delete(@PathVariable("id") Long id) {
         sysDictTypeService.delete(id);
         return Response.success();
     }
 
     @PutMapping("/{id}/status")
     @Log(value = "切换字典类型状态", type = "UPDATE")
-    public Response<Void> changeStatus(@PathVariable Long id, @Valid @RequestBody StatusReqDTO dto) {
+    public Response<Void> changeStatus(@PathVariable("id") Long id, @Valid @RequestBody StatusReqDTO dto) {
         sysDictTypeService.changeStatus(id, dto.getStatus());
         return Response.success();
     }

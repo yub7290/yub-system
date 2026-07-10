@@ -63,7 +63,7 @@ public class AuthController {
      * @param refreshToken 刷新Token
      */
     @PostMapping("/refresh/{refreshToken}")
-    public Response<LoginRespVO> refresh(@PathVariable String refreshToken) {
+    public Response<LoginRespVO> refresh(@PathVariable("refreshToken") String refreshToken) {
         return Response.success(authService.refresh(refreshToken));
     }
 

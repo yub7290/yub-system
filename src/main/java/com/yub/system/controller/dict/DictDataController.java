@@ -40,7 +40,7 @@ public class DictDataController {
      * 获取字典数据详情
      */
     @GetMapping("/{id}")
-    public Response<?> getDetail(@PathVariable Long id) {
+    public Response<?> getDetail(@PathVariable("id") Long id) {
         return Response.success(sysDictDataService.getDetail(id));
     }
 
@@ -68,7 +68,7 @@ public class DictDataController {
      */
     @DeleteMapping("/{id}")
     @Log(value = "删除字典数据", type = "DELETE")
-    public Response<Void> delete(@PathVariable Long id) {
+    public Response<Void> delete(@PathVariable("id") Long id) {
         sysDictDataService.delete(id);
         return Response.success();
     }
@@ -77,7 +77,7 @@ public class DictDataController {
      * 根据字典类型编码获取字典选项列表
      */
     @GetMapping("/options/{code}")
-    public Response<List<DictDataOptionVO>> getOptions(@PathVariable String code) {
+    public Response<List<DictDataOptionVO>> getOptions(@PathVariable("code") String code) {
         return Response.success(sysDictDataService.getOptionsByCode(code));
     }
 }

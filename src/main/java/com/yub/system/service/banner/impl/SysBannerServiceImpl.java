@@ -84,4 +84,9 @@ public class SysBannerServiceImpl implements SysBannerService {
     public void delete(Long id) {
         sysBannerMapper.deleteById(id);
     }
+
+    @Override
+    public List<SysBanner> selectAllEnabled() {
+        return sysBannerMapper.selectAllEnabled();
+    }
 }

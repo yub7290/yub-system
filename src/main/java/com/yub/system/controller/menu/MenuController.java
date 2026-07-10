@@ -63,7 +63,7 @@ public class MenuController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public Response<MenuDetailRespVO> getDetail(@PathVariable Long id) {
+    public Response<MenuDetailRespVO> getDetail(@PathVariable("id") Long id) {
         return Response.success(sysMenuService.getDetail(id));
     }
 
@@ -103,7 +103,7 @@ public class MenuController {
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @Log(value = "删除菜单", type = "DELETE")
-    public Response<Void> delete(@PathVariable Long id) {
+    public Response<Void> delete(@PathVariable("id") Long id) {
         sysMenuService.delete(id);
         return Response.success();
     }
@@ -118,7 +118,7 @@ public class MenuController {
     @PutMapping("/{id}/status")
     @PreAuthorize("isAuthenticated()")
     @Log(value = "切换菜单状态", type = "UPDATE")
-    public Response<Void> changeStatus(@PathVariable Long id, @Valid @RequestBody StatusReqDTO dto) {
+    public Response<Void> changeStatus(@PathVariable("id") Long id, @Valid @RequestBody StatusReqDTO dto) {
         sysMenuService.changeStatus(id, dto.getStatus());
         return Response.success();
     }

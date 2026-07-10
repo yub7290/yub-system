@@ -48,7 +48,7 @@ public class SysOperaLogController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public Response<OperaLogDetailRespVO> getDetail(@PathVariable Long id) {
+    public Response<OperaLogDetailRespVO> getDetail(@PathVariable("id") Long id) {
         return Response.success(sysOperaLogService.getDetail(id));
     }
 
