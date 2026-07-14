@@ -51,7 +51,7 @@ public class MenuUpdateReqDTO {
 
     /** 权限标识 */
     @Size(max = 100, message = "权限标识长度不能超过100个字符")
-    @Pattern(regexp = "^[a-zA-Z0-9_:]+$", message = "权限标识只能包含字母、数字、下划线和冒号")
+    @Pattern(regexp = "^[a-zA-Z0-9_:]*$", message = "权限标识只能包含字母、数字、下划线和冒号")
     private String permission;
 
     /** 状态（1=正常 0=禁用） */

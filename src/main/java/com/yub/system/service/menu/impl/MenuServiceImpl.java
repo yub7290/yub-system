@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -92,7 +93,7 @@ public class MenuServiceImpl implements SysMenuService {
         menu.setIcon(dto.getIcon());
         menu.setSort(dto.getSort() != null ? dto.getSort() : 0);
         menu.setMenuType(dto.getMenuType());
-        menu.setPermission(dto.getPermission());
+        menu.setPermission(StringUtils.hasText(dto.getPermission()) ? dto.getPermission() : null);
         menu.setStatus(dto.getStatus());
         Long currentUserId = SecurityUtils.getCurrentUserId();
         menu.setCreateBy(currentUserId);
@@ -119,7 +120,7 @@ public class MenuServiceImpl implements SysMenuService {
         menu.setIcon(dto.getIcon());
         menu.setSort(dto.getSort() != null ? dto.getSort() : 0);
         menu.setMenuType(dto.getMenuType());
-        menu.setPermission(dto.getPermission());
+        menu.setPermission(StringUtils.hasText(dto.getPermission()) ? dto.getPermission() : null);
         menu.setStatus(dto.getStatus());
         menu.setUpdateBy(SecurityUtils.getCurrentUserId());
         sysMenuMapper.updateById(menu);
